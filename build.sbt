@@ -1,4 +1,4 @@
-name := """quetico"""
+name := """restoule"""
 
 version := "1.0-SNAPSHOT"
 
