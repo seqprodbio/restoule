@@ -1,0 +1,30 @@
+@(loginForm: Form[LoginInfo])(implicit session : Session)
+
+<!DOCTYPE html>
+<html>
+	<body>
+		<h2>Login</h2>
+		@if(session.get("errorMessage").isDefined){
+			<p>@(session.get("errorMessage"))</p>
+		} else {
+			<br>
+		}
+		<form action="@routes.Login.processForm" method="POST">
+			<div>
+				<label for="username">Username:</label>
+				@if(Option(loginForm.value) != Option(None) && Option(loginForm.get) != Option(None) && Option(loginForm.get.username) != Option(None)){
+					<input type="text" name="username" value=@(loginForm.get.username) id="username">
+				} else {
+					<input type="text" name="username" id="username">
+				}
+			</div>
+			<div>
+				<lable for="password">Password:</label>
+				<input type="password" name="password" id="password">
+			</div>
+			<div>
+				<button type="submit">Login!</button>
+			</div>
+		</form>
+	</body>
+</html>
