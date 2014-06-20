@@ -23,6 +23,6 @@ object Global extends GlobalSettings {
   }
   
   override def onHandlerNotFound(request: RequestHeader) =  {
-	  Future.successful(Results.Ok(views.html.invalidPage()))
+	  Future.successful(Results.NotFound(views.html.invalidPage()))
   }
 }

@@ -6,6 +6,7 @@ import play.api.mvc.Session
 import play.api.data.{ Form }
 import play.api.data.Forms._
 import models.LoginInfo
+import models.LDAPAuthentication
 
 object Login extends Controller {
   
@@ -31,7 +32,7 @@ object Login extends Controller {
   }
   
   def authenticateLogin (login : LoginInfo) : Boolean = {
-    return (login.username.equals("mnerandzic"))
+    return (models.LDAPAuthentication.validateUser(login.username, login.password))
   }
   
   val loginForm = Form(mapping(
