@@ -1,0 +1,15 @@
+@(localDirectories: List[models.preferences.LocalDirectory])
+
+@main(Messages("application.name")) {
+  <dl class="products">
+    @for(localDirectory <- localDirectories) {
+      <dt>
+      @localDirectory.directory
+
+</dt>
+      <dd>@localDirectory.id</dd>
+    }
+</dl>
+  <p>
+
+</p> } 
