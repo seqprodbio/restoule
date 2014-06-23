@@ -1,5 +1,5 @@
 package models
 
 case class LoginInfo(
-    username:String,
-    password:String)
+   username: String,
+   password: String)
