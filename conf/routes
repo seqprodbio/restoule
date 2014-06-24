@@ -7,6 +7,9 @@ GET     /                           controllers.Application.entrance
 GET     /login                      controllers.Login.showLogin
 POST    /login                      controllers.Login.processForm
 GET     /mainPage                   controllers.Application.mainPage
+GET     /egaReleases                controllers.EgaReleases.viewEgaReleases
+POST    /egaReleases                controllers.EgaReleases.addEgaRelease
+POST    /viewEgaRelease             controllers.EgaReleases.openEgaRelease
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)
