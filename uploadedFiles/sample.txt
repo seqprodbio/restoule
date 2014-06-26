@@ -1,0 +1,6 @@
+Release	Sample Id	Platform	Coverage
+Release 15	ASDA_1904_Ma_r	123	93.548
+Release 15	ASDA_1905_Ma_r	123	91.397
+Release 15	ASDA_1906_Ma_r	123	97.501
+Release 15	ASDA_1907_Ma_r	123	60.123
+Release 15	ASDA_1908_Ma_r	123	101.99

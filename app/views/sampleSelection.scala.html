@@ -1,0 +1,78 @@
+@(header : Option[List[String]], content : Option[List[List[String]]], displayErrorMessages: Boolean = true)(implicit session : Session)
+<!--I added a displayErrorMessages field since sessions do not update until the next request-response transaction which means sometimes 
+false error messages are displayed-->
+
+
+<!DOCTYPE html>
+
+<head>
+    <style>
+        table,td
+        {
+            border:1px solid black;
+            border-collapse:collapse;
+        }
+    </style>
+</head>
+
+
+<html>
+    <body>
+        <h2>&nbspAdd Files and Samples</h2>
+        <div style="width:500px;height=225px;border:solid;margin-left:10px;">
+            <h3>&nbsp Add File</h3>
+            <div style="margin-left:auto;margin-right:auto;text-align:center">
+                @if(session.get("uploadErrorMessage").isDefined && displayErrorMessages == true){
+                    <p style="color:red" >@(session.get("uploadErrorMessage"))</p>
+                }
+                <form action="@routes.SampleSelection.upload" method="POST" enctype="multipart/form-data">
+                    <input type="file" name="tsvFile">
+                    <p>
+                        <button type="submit">Upload</button>
+                    </p>
+                </form>
+            </div>
+        </div>
+        @if(header.isDefined){
+            <br><br>
+            <div style="border:solid;margin-left:10px;">
+                <h3>&nbsp Pick Columns</h3>
+                <form action="@routes.SampleSelection.processForm" method="POST">
+                    <div style="margin-left:15px;text-align:center;overflow-x:scroll;">
+                        <table>
+                            <tr>
+                                
+                                <!--In order to have a checkbox return a false value if not selected, a hidden input is required after with 
+                                the same name and with a value of false  see the following thread for more information: 
+                                https://groups.google.com/forum/#!topic/play-framework/HygQuYF3a8E-->
+                            
+                                @for(counter <- 0 to (header.get.size - 1)){
+                                    <td>
+                                        <input type="checkbox" name="value[@(counter)]" id="value[@(counter)]" value="true">
+                                        <input type="hidden" name="value[@(counter)]" id="value[@(counter)]" value="false">
+                                    </td>
+                                }
+                            </tr>
+                            <tr>
+                                @for(title <- header.get){
+                                    <td>@(title)</td>
+                                }
+                            </tr>
+                            @for(row <- content.get){
+                                <tr>
+                                    @for(cell <- row){
+                                        <td>@(cell)</td>
+                                    }
+                                </tr>
+                            }
+                        </table>
+                        <br>
+                    </div>
+                    <br>
+                    <button style="margin-left: 50%; margin-right: 50%" type="submit">Submit</button>
+                    <p></p>
+                </form>
+            </div>
+        }
+    </body>
+</html>

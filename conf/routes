@@ -9,7 +9,12 @@ POST    /login                      controllers.Login.processForm
 GET     /mainPage                   controllers.Application.mainPage
 GET     /egaReleases                controllers.EgaReleases.viewEgaReleases
 POST    /egaReleases                controllers.EgaReleases.addEgaRelease
-POST    /viewEgaRelease             controllers.EgaReleases.openEgaRelease
+GET     /egaReleasesOld             controllers.EgaReleases.viewEgaReleases
+POST    /egaReleasesOld             controllers.EgaReleases.openEgaRelease
+GET     /sampleSelection            controllers.SampleSelection.viewSampleSelectionPage
+POST    /sampleSelection            controllers.SampleSelection.upload
+GET     /sampleSelectionWithTable   controllers.SampleSelection.viewSampleSelectionPage
+POST    /sampleSelectionWithTable   controllers.SampleSelection.processForm
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)

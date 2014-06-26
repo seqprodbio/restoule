@@ -36,7 +36,7 @@ object EgaReleases extends Controller {
                if (request.session.get("invalidNewReleaseName").isDefined) {
                   newSession = newSession - "invalidNewReleaseName"
                }
-               Redirect(routes.EgaReleases.viewEgaReleases()).withSession(newSession)
+               Redirect(routes.SampleSelection.viewSampleSelectionPage).withSession(newSession)
             }
          })
    }
