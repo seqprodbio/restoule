@@ -1,4 +1,4 @@
-@(header : Option[List[String]], content : Option[List[List[String]]], displayErrorMessages: Boolean = true)(implicit session : Session)
+@(header : Option[List[String]] = None, content : Option[List[List[String]]] = None, isHeaderPreselected : Array[Boolean] = new Array[Boolean](0), displayErrorMessages: Boolean = true)(implicit session : Session)
 <!--I added a displayErrorMessages field since sessions do not update until the next request-response transaction which means sometimes 
 false error messages are displayed-->
 
@@ -13,6 +13,22 @@ false error messages are displayed-->
             border-collapse:collapse;
         }
     </style>
+    
+    <script>
+    function changeBackgroundColor(buttonNumber) {
+        var checked = document.getElementById("value[" + buttonNumber + "]").checked
+        var elements = document.getElementsByTagName('*'), i;
+        for(i in elements){
+            if((' ' + elements[i].className + ' ').indexOf(' ' + "class" + buttonNumber + ' ') > -1){
+                if(checked){
+                    elements[i].style.background="#C1FFAC";
+                } else {
+                    elements[i].style.background="#FFFFFF";
+                }
+            }
+        }
+    }
+    </script>
 </head>
 
 
@@ -48,20 +64,32 @@ false error messages are displayed-->
                             
                                 @for(counter <- 0 to (header.get.size - 1)){
                                     <td>
-                                        <input type="checkbox" name="value[@(counter)]" id="value[@(counter)]" value="true">
+                                        @if(isHeaderPreselected(counter) == true){
+                                            <input type="checkbox" name="value[@(counter)]" id="value[@(counter)]" value="true" onchange="changeBackgroundColor(@(counter))" checked>
+                                        } else {
+                                            <input type="checkbox" name="value[@(counter)]" id="value[@(counter)]" value="true" onchange="changeBackgroundColor(@(counter))">
+                                        }
                                         <input type="hidden" name="value[@(counter)]" id="value[@(counter)]" value="false">
                                     </td>
                                 }
                             </tr>
                             <tr>
-                                @for(title <- header.get){
-                                    <td>@(title)</td>
+                                @for(counter <- 0 to (header.get.size - 1)){
+                                    @if(isHeaderPreselected(counter) == true){
+                                        <td style="background-color:#C1FFAC;" class="class@(counter)">@(header.get(counter))</td>
+                                    } else {
+                                        <td class="class@(counter)">@(header.get(counter))</td>
+                                    }
                                 }
                             </tr>
                             @for(row <- content.get){
                                 <tr>
-                                    @for(cell <- row){
-                                        <td>@(cell)</td>
+                                    @for(counter <- 0 to (row.size - 1)){
+                                        @if(isHeaderPreselected(counter) == true){
+                                            <td style="background-color:#C1FFAC;" class="class@(counter)">@(row(counter))</td>
+                                        } else {
+                                            <td class="class@(counter)">@(row(counter))</td>
+                                        }
                                     }
                                 </tr>
                             }

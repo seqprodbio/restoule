@@ -6,11 +6,12 @@ import play.api.data.{ Form }
 import play.api.data.Forms._
 import java.io.File
 import scala.io.Source
+import scala.collection.mutable.ArrayBuffer
 
 object SampleSelection extends Controller {
 
    def viewSampleSelectionPage() = Action { implicit request =>
-      Ok(views.html.sampleSelection(None, None))
+      Ok(views.html.sampleSelection())
    }
 
    def upload() = Action(parse.multipartFormData) { implicit request =>
@@ -33,10 +34,15 @@ object SampleSelection extends Controller {
          var tsvHeader: Option[List[String]] = Some(linesFromFile.next().split("\t").toList)
          var tsvContent: Option[List[List[String]]] = Some(getLineContentsFromLines(linesFromFile, 4))
          tsvFile.close()
+         var isColumnNameInSettingsArray: ArrayBuffer[Boolean] = new ArrayBuffer()
+         for (headerName <- tsvHeader.get) {
+            isColumnNameInSettingsArray.+=(isInSettings(headerName))
+         }
+
          if (request.session.get("uploadErrorMessage").isDefined) {
-            Ok(views.html.sampleSelection(tsvHeader, tsvContent, false)).withSession(request.session - "uploadErrorMessage" + ("tsvFileName" -> filename))
+            Ok(views.html.sampleSelection(tsvHeader, tsvContent, isColumnNameInSettingsArray.toArray, false)).withSession(request.session - "uploadErrorMessage" + ("tsvFileName" -> filename))
          } else {
-            Ok(views.html.sampleSelection(tsvHeader, tsvContent)).withSession(request.session + ("tsvFileName" -> filename))
+            Ok(views.html.sampleSelection(tsvHeader, tsvContent, isColumnNameInSettingsArray.toArray)).withSession(request.session + ("tsvFileName" -> filename))
          }
       } else {
          Redirect(routes.SampleSelection.viewSampleSelectionPage).withSession(request.session + ("uploadErrorMessage" -> errorMessage))
@@ -80,7 +86,7 @@ object SampleSelection extends Controller {
    def getLineContentsFromLines(linesFromFile: Iterator[String], numOfLines: Int): List[List[String]] = {
       var returnList: List[List[String]] = List()
       var counter: Int = 0
-      while (counter < numOfLines) {
+      while (counter < numOfLines && linesFromFile.hasNext) {
          returnList = returnList ::: List(linesFromFile.next().split("\t").toList)
          counter += 1
       }
@@ -98,6 +104,13 @@ object SampleSelection extends Controller {
          counter += 1
       }
       return returnList
+   }
+
+   def isInSettings(headerName: String): Boolean = {
+      if (headerName.equals("analyzed_sample_id")) {
+         return true
+      }
+      return false
    }
 
    val headerSelectionForm = Form("value" -> list(boolean))
