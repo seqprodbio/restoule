@@ -1,0 +1,54 @@
+@(generatedXMLs : Array[String], allSamplesComplete : Boolean)
+
+<!DOCTYPE html>
+<head>
+    <style>
+        .submitButton {
+            border:solid 2px;
+            width:auto;
+            display:inline-block;
+            padding:10px;
+            margin: 20px;
+        }
+        
+        #incompleteSamplesMessage { 
+            float:left;
+            padding-top:18px;
+            color: red;
+        }
+    </style>
+    
+    <script>
+        function clickedButton(server) {
+            document.getElementById("selectedButton").value=server;
+            document.getElementById("submissionForm").submit();
+        }
+    </script>
+</head>
+<body>
+    <h2>Generate XML</h2>
+    <br>
+    @for(xmlName <- generatedXMLs){
+        <p class="XMLName">&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp@(xmlName)</p>
+    }
+    <br><br><br>
+    <form action="@routes.XMLSubmission.processServerSubmission" method="POST" id="submissionForm">
+        <div class="submitButton" id="submitToTestServer" style="text-align:center" onclick="clickedButton('testServer')">
+            Submit To Test Server
+        </div>
+        <br>
+        <div>
+            @if(allSamplesComplete){
+                <div class="submitButton" id="submitReleaseDiv" style="text-align:center;float:left" onclick="clickedButton('realServer')">
+            } else {
+                <div class="submitButton" id="submitReleaseDiv" style="text-align:center;float:left;background-color:#C0C0C0">
+            }
+                Submit Release
+            </div>
+            @if(!allSamplesComplete){
+                <p id="incompleteSamplesMessage">There are incomplete samples in this release!</p>
+            }
+        </div>
+        <input type="hidden" id="selectedButton" name = "selectedButton" value="testServer">
+    </form>
+</body>

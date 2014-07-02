@@ -1,0 +1,14 @@
+@()(implicit session : Session)
+
+<!DOCTYPE html>
+<head>
+</head>
+<body>
+    <p>Your release has been successfully submitted to the 
+    @if(session.get("serverSubmittedTo").isDefined && session.get("serverSubmittedTo").get.equals("testServer")){
+        test
+    }
+    GNOS servers</p>
+    <p>Please follow the following link to return to the main page</p>
+    <a href="@routes.Application.mainPage">Main page</a>
+</body>
