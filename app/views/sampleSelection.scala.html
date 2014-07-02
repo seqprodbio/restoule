@@ -21,7 +21,7 @@ false error messages are displayed-->
         for(i in elements){
             if((' ' + elements[i].className + ' ').indexOf(' ' + "class" + buttonNumber + ' ') > -1){
                 if(checked){
-                    elements[i].style.background="#C1FFAC";
+                    elements[i].style.background="#ccff99";
                 } else {
                     elements[i].style.background="#FFFFFF";
                 }
@@ -76,7 +76,7 @@ false error messages are displayed-->
                             <tr>
                                 @for(counter <- 0 to (header.get.size - 1)){
                                     @if(isHeaderPreselected(counter) == true){
-                                        <td style="background-color:#C1FFAC;" class="class@(counter)">@(header.get(counter))</td>
+                                        <td style="background-color:#ccff99;" class="class@(counter)">@(header.get(counter))</td>
                                     } else {
                                         <td class="class@(counter)">@(header.get(counter))</td>
                                     }
@@ -86,7 +86,7 @@ false error messages are displayed-->
                                 <tr>
                                     @for(counter <- 0 to (row.size - 1)){
                                         @if(isHeaderPreselected(counter) == true){
-                                            <td style="background-color:#C1FFAC;" class="class@(counter)">@(row(counter))</td>
+                                            <td style="background-color:#ccff99;" class="class@(counter)">@(row(counter))</td>
                                         } else {
                                             <td class="class@(counter)">@(row(counter))</td>
                                         }

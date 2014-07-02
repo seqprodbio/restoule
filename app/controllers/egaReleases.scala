@@ -32,7 +32,7 @@ object EgaReleases extends Controller {
                newSession = newSession + ("invalidNewReleaseName" -> "There already exists a release with that name!")
                Redirect(routes.EgaReleases.viewEgaReleases()).withSession(newSession)
             } else {
-               newSession = newSession + ("newReleaseName" -> releaseName)
+               newSession = newSession + ("releaseName" -> releaseName)
                if (request.session.get("invalidNewReleaseName").isDefined) {
                   newSession = newSession - "invalidNewReleaseName"
                }
@@ -56,9 +56,9 @@ object EgaReleases extends Controller {
                if (request.session.get("invalidViewRelease").isDefined) {
                   newSession = newSession - "invalidViewRelease"
                }
-               newSession = newSession + ("viewReleaseName" -> values(0))
+               newSession = newSession + ("releaseName" -> values(0))
 
-               Redirect(routes.EgaReleases.viewEgaReleases()).withSession(newSession)
+               Redirect(routes.EgaReleaseSamples.viewEgaReleaseSamples).withSession(newSession)
             } else {
                newSession = newSession + ("invalidViewRelease" -> "Please select a release to view")
                Redirect(routes.EgaReleases.viewEgaReleases()).withSession(newSession)

@@ -71,12 +71,12 @@ object SampleSelection extends Controller {
                      sampleNames = row(index) :: sampleNames
                   }
                }
-               if (request.session.get("emptyCheckboxMessage").isDefined) {
-                  Redirect(routes.SampleSelection.viewSampleSelectionPage).withSession(request.session - "tsvFileName" - "emptyCheckboxMessage")
-               } else {
-                  Redirect(routes.SampleSelection.viewSampleSelectionPage).withSession(request.session - "tsvFileName")
-               }
                //TODO: Store these sampleNames in database
+               if (request.session.get("emptyCheckboxMessage").isDefined) {
+                  Redirect(routes.EgaReleaseSamples.viewEgaReleaseSamples).withSession(request.session - "tsvFileName" - "emptyCheckboxMessage")
+               } else {
+                  Redirect(routes.EgaReleaseSamples.viewEgaReleaseSamples).withSession(request.session - "tsvFileName")
+               }
             } else {
                Redirect(routes.SampleSelection.viewSampleSelectionPage).withSession(request.session + ("uploadErrorMessage" -> "Try again and select one or more columns this time"))
             }

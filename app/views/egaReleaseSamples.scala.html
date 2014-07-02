@@ -1,0 +1,234 @@
+@(filesInRelease : List[String], samplesInFile : List[Sample], completeness : String = "all")(implicit session : Session)
+
+<!DOCTYPE html>
+<html> 
+    <head>
+        <style>
+            td {
+                text-align:center;
+            }
+            .notLast {
+                border-right:solid 2px;
+            }
+            
+            #completenessForm {
+                float:right;
+            }
+            
+            #completenessOptionsTable {
+                float:right;
+            }
+            
+            #line {
+                border:solid 1px;
+                width:100%;
+                height:0px;
+                margin-top:4px;
+            }
+            
+            .headerCell{
+                border:solid 2px;
+            }
+            
+            .completeContentCell{
+                border-left:solid 2px;
+                border-right:solid 2px;
+                background-color: #ccff99;
+            }
+            
+            .incompleteContentCell{
+                border-left:solid 2px;
+                border-right:solid 2px;
+                background-color:#ff6e6e;
+            }
+            
+            .bottomCell{
+                border-top:solid 2px;
+            }
+            
+            .completeOptions {
+                float:right;
+            }
+            .FileNameDiv {
+                float:left;
+                height:25px;
+                border-right:solid;
+                border-bottom:solid;
+                text-align:"center";
+                padding-top: 3px;
+                padding-bottom: 5px;
+                height:auto; 
+            }
+        </style>
+        
+        <script>
+            function clickedCompleteness(name) {
+                if(name !== "all"){
+                    document.getElementById("all").value = "false";
+                }
+                if(name !== "complete"){
+                    document.getElementById("complete").value = "false";
+                }
+                if(name !== "incomplete"){
+                    document.getElementById("incomplete").value = "false";
+                }
+                document.getElementById(name).value = "true";
+                document.getElementById(name+"Cell").style.fontWeight = "normal";
+                document.getElementById("completenessForm").submit();
+            }
+            
+            function onMouseOverCompleteness(name) {
+                document.getElementById(name).style.fontWeight = "bold";
+            }
+            
+            function onMouseOutCompleteness (name) {
+                if(name !== "@(completeness)Cell"){
+                    document.getElementById(name).style.fontWeight = "normal";
+                }
+            }
+            
+            function growFileNameDiv(divId) {
+                var currentWidth = document.getElementById(divId).offsetWidth;
+                var futureWidth = currentWidth * 1.3 - (currentWidth * 1.3)%1;
+                var currentHeight = document.getElementById(divId).clientHeight;
+                var futureHeight = currentHeight;
+                document.getElementById(divId).style.width = futureWidth.toString() + "px";
+                document.getElementById(divId).style.height = futureHeight.toString() + "px";
+                document.getElementById(divId).style.textAlign="center";
+                document.getElementById(divId).style.borderLeft="solid 2px";
+            }
+            
+            function normalizeFileNameDiv(divId){
+                document.getElementById(divId).style.width = "auto";
+                document.getElementById(divId).style.height = "auto";
+                document.getElementById(divId).style.textAlign="center";
+                if(divId !== "allFilesDiv"){
+                    document.getElementById(divId).style.borderLeft="solid 0px";
+                }
+            }
+            
+            function selectFileName(filename){
+                document.getElementById("selectedFileName").value=filename;
+                document.getElementById("filenameForm").submit();
+            }
+            
+            function redirectToTsvAddition() {
+                location.assign("/sampleSelection");
+            }
+        </script>
+    </head>
+    
+    <body> 
+    
+        <a href="/egaReleaseFileSamples">Generate XML</a>
+        <form action="@routes.EgaReleaseSamples.changeCompletenessDisplayed" method="POST" id="completenessForm">
+            <table id="completenessOptionsTable">
+                <tr>
+                    <div class="completeOptions">
+                        <td class="notLast" onclick="clickedCompleteness('all')" onmouseover="onMouseOverCompleteness('allCell')" onmouseout = "onMouseOutCompleteness('allCell')" id="allCell"
+                        @if(completeness.equals("all")){
+                            style="font-weight:bold"
+                        }
+                        >All &nbsp</td>
+                        <input type="hidden" name="all" value="false" id="all" />
+                    </div>
+                    
+                    <div class="completeOptions">
+                        <td class="notLast" onclick="clickedCompleteness('complete')" onmouseover="onMouseOverCompleteness('completeCell')" onmouseout = "onMouseOutCompleteness('completeCell')" id="completeCell"
+                        @if(completeness.equals("complete")){
+                            style="font-weight:bold"
+                        }
+                        >&nbsp Complete &nbsp</td>
+                        <input type="hidden" name="complete" value="false" id="complete" />
+                    </div>
+                    
+                    <div class="completeOptions">
+                        <td onclick="clickedCompleteness('incomplete')" onmouseover="onMouseOverCompleteness('incompleteCell')" onmouseout = "onMouseOutCompleteness('incompleteCell')" id="incompleteCell"
+                        @if(completeness.equals("incomplete")){
+                            style="font-weight:bold"
+                        }
+                        >&nbsp Incomplete</td>   
+                        <input type="hidden" name="incomplete" value="false" id="incomplete" />
+                    </div>
+                </tr>
+            </table>
+        </form>
+        <br>
+        <div id="line"></div>
+        
+        <form action="@routes.EgaReleaseSamples.selectFileSamples" method="POST" id="filenameForm">
+            <div>
+                <div class="FileNameDiv" style="border-left:solid" id="allFilesDiv" onclick="selectFileName('all')" onmouseover="growFileNameDiv('allFilesDiv')" onmouseout ="normalizeFileNameDiv('allFilesDiv')">
+                    @if(!session.get("viewFilesSamples").isDefined || session.get("viewFilesSamples").get.equals("all")){
+                        <b>&nbspAll&nbsp</b>
+                    } else {
+                        &nbspAll&nbsp
+                    }
+                </div>
+                @for(filename <- filesInRelease){
+                    <div class="FileNameDiv" onclick="selectFileName('@(filename)')" onmouseover="growFileNameDiv('@(filename)Div')" onmouseout ="normalizeFileNameDiv('@(filename)Div')" id="@(filename)Div">
+                        @if(session.get("viewFilesSamples").isDefined && session.get("viewFilesSamples").get.equals(filename) ){
+                            <b>&nbsp@(filename)&nbsp</b>
+                        } else {
+                            &nbsp@(filename)&nbsp
+                        }
+                    </div>
+                }
+                <div class="FileNameDiv" onclick="redirectToTsvAddition()" id="addFilesDiv" onmouseover="growFileNameDiv('addFilesDiv')" onmouseout ="normalizeFileNameDiv('addFilesDiv')">
+                    &nbsp&nbsp+&nbsp&nbsp
+                </div>
+                <input type="hidden" name="selectedFileName" value="all" id="selectedFileName">
+            </div>
+        </form>
+        
+        <br><br><br><br>
+        <table style="border-collapse:collapse">
+            <tr>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td colspan="2" class="headerCell">Bam Header</td>
+                <td colspan="2" class="headerCell">Seqware</td>
+            </tr>
+            <tr>
+                <td class="headerCell">&nbspSample&nbsp</td>
+                <td class="headerCell">&nbspFS&nbsp</td>
+                <td class="headerCell">&nbspBox&nbsp</td>
+                <td class="headerCell">&nbspRun&nbsp</td>
+                <td class="headerCell">&nbspBarcode&nbsp</td>
+                <td class="headerCell">&nbspLibrary Source&nbsp</td>
+                <td class="headerCell">&nbspLibrary Strategy&nbsp</td>
+            </tr>
+            @for(sample <- samplesInFile){
+                <tr>
+                    @if(sample.complete == true){
+                        <td class="completeContentCell">&nbsp@(sample.name)&nbsp</td>
+                        <td class="completeContentCell">&nbsp@(sample.Fs)&nbsp</td>
+                        <td class="completeContentCell">&nbsp@(sample.box)&nbsp</td>
+                        <td class="completeContentCell">&nbsp@(sample.run)&nbsp</td>
+                        <td class="completeContentCell">&nbsp@(sample.barcode)&nbsp</td>
+                        <td class="completeContentCell">&nbsp@(sample.librarySource)&nbsp</td>
+                        <td class="completeContentCell">&nbsp@(sample.libraryStrategy)&nbsp</td>
+                    } else {
+                        <td class="incompleteContentCell">&nbsp@(sample.name)&nbsp</td>
+                        <td class="incompleteContentCell">&nbsp@(sample.Fs)&nbsp</td>
+                        <td class="incompleteContentCell">&nbsp@(sample.box)&nbsp</td>
+                        <td class="incompleteContentCell">&nbsp@(sample.run)&nbsp</td>
+                        <td class="incompleteContentCell">&nbsp@(sample.barcode)&nbsp</td>
+                        <td class="incompleteContentCell">&nbsp@(sample.librarySource)&nbsp</td>
+                        <td class="incompleteContentCell">&nbsp@(sample.libraryStrategy)&nbsp</td>
+                    }
+                </tr>
+            }
+            <tr>
+                <td class="bottomCell"></td>
+                <td class="bottomCell"></td>
+                <td class="bottomCell"></td>
+                <td class="bottomCell"></td>
+                <td class="bottomCell"></td>
+                <td class="bottomCell"></td>
+                <td class="bottomCell"></td>
+            </tr>
+        </table>
+    </body>
+</html>

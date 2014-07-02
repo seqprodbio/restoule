@@ -15,6 +15,10 @@ GET     /sampleSelection            controllers.SampleSelection.viewSampleSelect
 POST    /sampleSelection            controllers.SampleSelection.upload
 GET     /sampleSelectionWithTable   controllers.SampleSelection.viewSampleSelectionPage
 POST    /sampleSelectionWithTable   controllers.SampleSelection.processForm
+GET     /egaReleaseSamples          controllers.EgaReleaseSamples.viewEgaReleaseSamples
+POST    /egaReleaseSamples          controllers.EgaReleaseSamples.changeCompletenessDisplayed
+GET     /egaReleaseFileSamples      controllers.EgaReleaseSamples.viewEgaReleaseSamples
+POST    /egaReleaseFileSamples      controllers.EgaReleaseSamples.selectFileSamples
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)
