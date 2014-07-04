@@ -1,6 +1,24 @@
-@(localDirectories: List[models.preferences.LocalDirectory])
-
+@(localDirectories: List[models.preferences.LocalDirectory], form: Form[models.preferences.LocalDirectory])(implicit request: play.api.mvc.RequestHeader)
+@import helper._
+@import helper.twitterBootstrap._
+@import controllers.preferences.LocalDirectories
 @main(Messages("application.name")) {
+	
+	
+	@helper.form(action = routes.preferences.LocalDirectories.save) {
+    <fieldset>
+￼￼<legend>
+  @Messages("products.details", Messages("products.new"))
+              </legend>
+              @helper.inputText(form("id"))
+              @helper.inputText(form("dir"))
+              @helper.textarea(form("size"))
+            </fieldset>
+            <p><input type="submit" class="btn primary"
+                value='@Messages("products.new.submit")'></p>
+}
+	
+	
   <dl class="products">
     @for(localDirectory <- localDirectories) {
       <dt>

@@ -1,6 +1,6 @@
 package models.preferences
 
-case class LocalDirectory(id: Long, directory: String, totalfiles: Integer)
+case class LocalDirectory(id: Long, directory: String, totalfiles: Int)
 
 object LocalDirectory {
   var localDirectories = Set(
