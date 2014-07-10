@@ -2,23 +2,27 @@ package controllers;
 
 import play.api._
 import play.api.mvc._
+import play.api.db.slick._
 import play.api.data.{ Form }
 import play.api.data.Forms._
 import scala.collection.mutable.ArrayBuilder
 
 import models.Sample
+import models.persistance.ReleaseDAO
+import models.persistance.TSVFileDAO
 
 object XMLSubmission extends Controller {
 
    val submissionForm = Form(single(
       "selectedButton" -> text))
 
-   def viewSubmissionPage() = Action { implicit request =>
-      if (!request.session.get("releaseName").isDefined) {
-         Redirect(routes.EgaReleases.viewEgaReleases)
+   def viewSubmissionPage() = DBAction { implicit rs =>
+      if (rs.request.session.get("releaseName").isDefined && ReleaseDAO.releaseNameExists(rs.request.session.get("releaseName").get)(rs.dbSession)) {
+         val releaseName = rs.request.session.get("releaseName").get
+         var generatedXMLs: Array[String] = getArrayOfGeneratedXMLS(releaseName)
+         Ok(views.html.xmlSubmissionPage(generatedXMLs, areAllSamplesComplete(releaseName)(rs.dbSession)))
       } else {
-         var generatedXMLs: Array[String] = getArrayOfGeneratedXMLS(request.session.get("releaseName").get)
-         Ok(views.html.xmlSubmissionPage(generatedXMLs, areAllSamplesComplete(request.session.get("releaseName").get)))
+         Redirect(routes.EgaReleases.viewEgaReleases)
       }
    }
 
@@ -45,12 +49,13 @@ object XMLSubmission extends Controller {
       return xmlArray
    }
 
-   def areAllSamplesComplete(releaseName: String): Boolean = {
-      for (sample <- EgaReleaseSamples.getSamplesFromAllFiles(EgaReleaseSamples.getFileNamesInRelease(releaseName), "all")) {
+   def areAllSamplesComplete(releaseName: String) = { implicit session: play.api.db.slick.Session =>
+      var returnValue = true
+      for (sample <- EgaReleaseSamples.getSamplesFromAllFiles(TSVFileDAO.getTSVFileNamesFromReleaseName(releaseName)(session), "all")(session)) {
          if (!sample.complete) {
-            return false
+            returnValue = false
          }
       }
-      return true
+      returnValue
    }
 }

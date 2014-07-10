@@ -29,7 +29,7 @@ object Login extends Controller {
                if (!UserDAO.existsUserWithName(login.username)(rs.dbSession)) {
                   UserDAO.createUserWithName(login.username)(rs.dbSession);
                }
-               Redirect(routes.Application.entrance()).withSession("loginTime" -> "Just a few seconds ago")
+               Redirect(routes.Application.entrance()).withSession(("loginTime" -> "Just a few seconds ago"), ("username" -> login.username))
             } else {
                Redirect(routes.Login.showLogin()).withSession(("errorMessage" -> "Not authorized"), ("username" -> login.username), ("password" -> ""))
             }

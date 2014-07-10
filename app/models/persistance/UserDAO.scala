@@ -20,4 +20,8 @@ object UserDAO {
       val newUser = new User(None, username, new java.sql.Date(System.currentTimeMillis()))
       users.insert(newUser)
    }
+
+   def getIdFromName(username: String) = { implicit session: Session =>
+      users.filter(u => u.username === username).map(u => u.id).first
+   }
 }

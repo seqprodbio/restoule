@@ -2,9 +2,13 @@ package controllers;
 
 import play.api._
 import play.api.mvc._
+import play.api.db.slick._
 import play.api.data.{ Form }
 import play.api.data.Forms._
 import models.Sample
+import models.persistance.ReleaseDAO
+import models.persistance.TSVFileDAO
+import models.persistance.SampleDAO
 
 object EgaReleaseSamples extends Controller {
 
@@ -18,26 +22,27 @@ object EgaReleaseSamples extends Controller {
       single(
          "selectedFileName" -> text))
 
-   def viewEgaReleaseSamples = Action { implicit request =>
-      if (!request.session.get("releaseName").isDefined) {
-         Redirect(routes.EgaReleases.viewEgaReleases)
-      } else {
-         var filesInRelease = getFileNamesInRelease(request.session.get("releaseName").get)
+   def viewEgaReleaseSamples = DBAction { implicit rs =>
+      if (rs.request.session.get("releaseName").isDefined && ReleaseDAO.releaseNameExists(rs.request.session.get("releaseName").get)(rs.dbSession)) {
+         val releaseName = rs.request.session.get("releaseName").get
+         var filesInRelease = TSVFileDAO.getTSVFileNamesFromReleaseName(releaseName)(rs.dbSession)
 
          var completenessOfSamples = ""
-         if (request.session.get("completeness").isDefined) {
-            completenessOfSamples = request.session.get("completeness").get
+         if (rs.request.session.get("completeness").isDefined) {
+            completenessOfSamples = rs.request.session.get("completeness").get
          } else {
             completenessOfSamples = "all"
          }
 
          var samplesFromFiles: List[Sample] = List()
-         if (request.session.get("viewFilesSamples").isDefined && (filesInRelease.exists(_.equals(request.session.get("viewFilesSamples").get)))) {
-            samplesFromFiles = getSamplesFromFile(request.session.get("viewFilesSamples").get, completenessOfSamples)
+         if (rs.request.session.get("viewFilesSamples").isDefined && (filesInRelease.exists(_.equals(rs.request.session.get("viewFilesSamples").get)))) {
+            samplesFromFiles = getSamplesFromFile(rs.request.session.get("viewFilesSamples").get, completenessOfSamples)(rs.dbSession)
          } else {
-            samplesFromFiles = getSamplesFromAllFiles(filesInRelease, completenessOfSamples)
+            samplesFromFiles = getSamplesFromAllFiles(filesInRelease, completenessOfSamples)(rs.dbSession)
          }
          Ok(views.html.egaReleaseSamples(filesInRelease, samplesFromFiles, completenessOfSamples))
+      } else {
+         Redirect(routes.EgaReleases.viewEgaReleases)
       }
    }
 
@@ -61,45 +66,25 @@ object EgaReleaseSamples extends Controller {
          success => Redirect(routes.EgaReleaseSamples.viewEgaReleaseSamples).withSession(request.session + ("viewFilesSamples" -> success)))
    }
 
-   def getFileNamesInRelease(releaseName: String): List[String] = {
-      return List("jcn_m.txt", "cnsm_m.txt")
-   }
-
-   def getSamplesFromAllFiles(filenames: List[String], completenessType: String): List[Sample] = {
+   def getSamplesFromAllFiles(filenames: List[String], completenessType: String) = { implicit session: play.api.db.slick.Session =>
       var returnList: List[Sample] = List()
       for (filename <- filenames) {
-         returnList = returnList ::: getSamplesFromFile(filename, completenessType)
+         returnList = returnList ::: getSamplesFromFile(filename, completenessType)(session)
       }
-      return returnList
+      returnList
    }
 
-   def getSamplesFromFile(filename: String, completenessType: String): List[Sample] = {
+   def getSamplesFromFile(filename: String, completenessType: String) = { implicit session: play.api.db.slick.Session =>
       var returnList: List[Sample] = List()
-      if (filename.equals("jcn_m.txt")) {
-         if (completenessType.equals("all") || completenessType.equals("incomplete")) {
-            returnList = returnList ::: List(new Sample("PCSI_0001", "", "", "", "", "", "", false))
+      var samplesFromFile = SampleDAO.getSamplesFromFile(filename)(session)
+      for (sample <- samplesFromFile) {
+         if ((completenessType.equals("all") || completenessType.equals("incomplete")) && !sample.complete) {
+            returnList = returnList ::: List(sample)
          }
-         if (completenessType.equals("all") || completenessType.equals("complete")) {
-            returnList = returnList ::: List(new Sample("PCSI_0002", "", "", "", "", "", "", true))
-         }
-         if (completenessType.equals("all") || completenessType.equals("complete")) {
-            returnList = returnList ::: List(new Sample("PCSI_0003", "", "", "", "", "", "", true))
-         }
-         if (completenessType.equals("all") || completenessType.equals("complete")) {
-            returnList = returnList ::: List(new Sample("PCSI_0004", "", "", "", "", "", "", true))
-         }
-         if (completenessType.equals("all") || completenessType.equals("incomplete")) {
-            returnList = returnList ::: List(new Sample("PCSI_0005", "", "", "", "", "", "", false))
+         if ((completenessType.equals("all") || completenessType.equals("complete")) && sample.complete) {
+            returnList = returnList ::: List(sample)
          }
       }
-      if (filename.equals("cnsm_m.txt")) {
-         if (completenessType.equals("all") || completenessType.equals("incomplete")) {
-            returnList = returnList ::: List(new Sample("PCSI_0006", "", "", "", "", "", "", false))
-         }
-         if (completenessType.equals("all") || completenessType.equals("complete")) {
-            returnList = returnList ::: List(new Sample("PCSI_0007", "", "", "", "", "", "", true))
-         }
-      }
-      return returnList
+      returnList
    }
 }
