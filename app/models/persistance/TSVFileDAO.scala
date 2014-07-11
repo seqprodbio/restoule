@@ -51,12 +51,12 @@ object TSVFileDAO {
       ReleaseTSVFileLinkDAO.createLink(releaseId, tsvFileId)(session)
    }
 
-   def getTSVIdFromFileName(filename: String) = { implicit session: Session =>
-      tsvFiles.filter(t => t.name === filename).map(t => t.id).firstOption
+   def getTSVIdFromFileName(fileName: String) = { implicit session: Session =>
+      tsvFiles.filter(t => t.name === fileName).map(t => t.id).firstOption
    }
 
-   def tsvFileExists(filename: String) = { implicit session: Session =>
-      if (getTSVIdFromFileName(filename)(session).isDefined) {
+   def tsvFileExists(fileName: String) = { implicit session: Session =>
+      if (getTSVIdFromFileName(fileName)(session).isDefined) {
          true
       } else {
          false

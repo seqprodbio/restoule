@@ -11,7 +11,9 @@ import models.persistance.TSVFileDAO
 import models.persistance.SampleDAO
 
 import java.io.File
+import java.util.Scanner
 import scala.io.Source
+import scala.util.matching.Regex
 import scala.collection.mutable.ArrayBuffer
 
 object SampleSelection extends Controller {
@@ -26,14 +28,47 @@ object SampleSelection extends Controller {
 
    def upload() = DBAction(parse.multipartFormData) { implicit rs =>
       var errorMessage = ""
-      var filename = ""
+      var fileName = ""
       var filePath = ""
       rs.request.body.file("tsvFile").map { tsvFile =>
          if (tsvFile.contentType.get.equals("text/plain")) {
-            filename = tsvFile.filename
-            var movedFile = new File(s"./uploadedFiles/$filename")
-            tsvFile.ref.moveTo(movedFile)
-            filePath = movedFile.getAbsolutePath()
+            fileName = tsvFile.filename
+            var tempFile = new File(s"./uploadedFiles/temp.txt")
+            if (tempFile.exists()) {
+               tempFile.delete()
+            }
+            var fileLocation = new File(s"./uploadedFiles/$fileName")
+            tsvFile.ref.moveTo(tempFile)
+            var moved = false
+            while (!moved) { //This is to deal with someone uploading a file with a name that already exists (including if it has different file content, in which case, we add a (number) at the end)
+               if (!fileLocation.exists()) {
+                  tempFile.renameTo(fileLocation)
+                  filePath = fileLocation.getAbsolutePath()
+                  moved = true
+               } else {
+                  if (fileContentsAreEqual(tempFile, fileLocation)) {
+                     filePath = fileLocation.getAbsolutePath()
+                     moved = true
+                  } else {
+                     var fileNameParts: Array[String] = fileName.split("\\.")
+                     val regex = "\\([0-9]+\\)".r
+                     if (regex.findAllIn(fileNameParts(0)).hasNext) { //This will work if no one has tsvfiles with a (number) in them
+                        var resultMatch = regex.findAllIn(fileNameParts(0)).matchData.next
+                        var resultString = resultMatch.matched
+                        var number = resultString.substring(1, resultString.length - 1).toInt
+                        number = number + 1
+                        fileNameParts(0) = fileNameParts(0).substring(0, resultMatch.start) + "(" + number + ")" + fileNameParts(0).substring(resultMatch.end, fileNameParts(0).length)
+                        fileName = fileNameParts.mkString(".")
+                        fileLocation = new File(s"./uploadedFiles/$fileName")
+                        //Do some more checking that we've actually added a () and then replace the number in teh () and put the filename back together and then change the File
+                     } else {
+                        fileNameParts(0) = fileNameParts(0) + "(1)"
+                        fileName = fileNameParts.mkString(".")
+                        fileLocation = new File(s"./uploadedFiles/$fileName")
+                     }
+                  }
+               }
+            }
          } else {
             errorMessage = "Content does not seem to be a .tsv file"
          }
@@ -41,8 +76,7 @@ object SampleSelection extends Controller {
          errorMessage = "Please select a file to upload"
       }
       if (errorMessage.equals("")) {
-         var tsvFile = Source.fromFile("./uploadedFiles/" + filename)
-         println(tsvFile.getClass())
+         var tsvFile = Source.fromFile(filePath)
          var linesFromFile = tsvFile.getLines
          var tsvHeader: Option[List[String]] = Some(linesFromFile.next().split("\t").toList)
          var tsvContent: Option[List[List[String]]] = Some(getLineContentsFromLines(linesFromFile, 4))
@@ -52,17 +86,17 @@ object SampleSelection extends Controller {
             isColumnNameInSettingsArray.+=(isInSettings(headerName))
          }
          val releaseName = rs.request.session.get("releaseName").get
-         if (TSVFileDAO.tsvFileExists(filename)(rs.dbSession)) {
-            if (!TSVFileDAO.tsvFileExistsInRelease(releaseName, filename)(rs.dbSession)) {
-               TSVFileDAO.addTSVFileToRelease(releaseName, filename)(rs.dbSession)
+         if (TSVFileDAO.tsvFileExists(fileName)(rs.dbSession)) {
+            if (!TSVFileDAO.tsvFileExistsInRelease(releaseName, fileName)(rs.dbSession)) {
+               TSVFileDAO.addTSVFileToRelease(releaseName, fileName)(rs.dbSession)
             }
          } else {
-            TSVFileDAO.createTSVFile(releaseName, filename, filePath)(rs.dbSession)
+            TSVFileDAO.createTSVFile(releaseName, fileName, filePath)(rs.dbSession)
          }
          if (rs.request.session.get("uploadErrorMessage").isDefined) {
-            Ok(views.html.sampleSelection(tsvHeader, tsvContent, isColumnNameInSettingsArray.toArray, false)).withSession(rs.request.session - "uploadErrorMessage" + ("tsvFileName" -> filename))
+            Ok(views.html.sampleSelection(tsvHeader, tsvContent, isColumnNameInSettingsArray.toArray, false)).withSession(rs.request.session - "uploadErrorMessage" + ("tsvFileName" -> fileName))
          } else {
-            Ok(views.html.sampleSelection(tsvHeader, tsvContent, isColumnNameInSettingsArray.toArray)).withSession(rs.request.session + ("tsvFileName" -> filename))
+            Ok(views.html.sampleSelection(tsvHeader, tsvContent, isColumnNameInSettingsArray.toArray)).withSession(rs.request.session + ("tsvFileName" -> fileName))
          }
       } else {
          Redirect(routes.SampleSelection.viewSampleSelectionPage).withSession(rs.request.session + ("uploadErrorMessage" -> errorMessage))
@@ -139,6 +173,26 @@ object SampleSelection extends Controller {
          return true
       }
       return false
+   }
+
+   def fileContentsAreEqual(file1: File, file2: File): Boolean = {
+      var scanner1 = new Scanner(file1.toPath(), "UTF-8")
+      var scanner2 = new Scanner(file2.toPath(), "UTF-8")
+      while (scanner1.hasNextLine() && scanner2.hasNextLine()) {
+         if (!scanner1.nextLine().equals(scanner2.nextLine())) {
+            scanner1.close()
+            scanner2.close()
+            return false
+         }
+      }
+      if (scanner1.hasNextLine() != scanner2.hasNextLine()) {
+         scanner1.close()
+         scanner2.close()
+         return false
+      }
+      scanner1.close()
+      scanner2.close()
+      return true
    }
 
    val headerSelectionForm = Form("value" -> list(boolean))

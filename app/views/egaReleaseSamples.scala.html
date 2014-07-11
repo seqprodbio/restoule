@@ -159,7 +159,7 @@
         <form action="@routes.EgaReleaseSamples.selectFileSamples" method="POST" id="filenameForm">
             <div>
                 <div class="FileNameDiv" style="border-left:solid" id="allFilesDiv" onclick="selectFileName('all')" onmouseover="growFileNameDiv('allFilesDiv')" onmouseout ="normalizeFileNameDiv('allFilesDiv')">
-                    @if(!session.get("viewFilesSamples").isDefined || session.get("viewFilesSamples").get.equals("all")){
+                    @if(!session.get("viewFilesSamples").isDefined || session.get("viewFilesSamples").get.equals("all") || !filesInRelease.contains(session.get("viewFilesSamples").get)){
                         <b>&nbspAll&nbsp</b>
                     } else {
                         &nbspAll&nbsp
