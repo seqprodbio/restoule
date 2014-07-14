@@ -9,6 +9,7 @@ import play.api.data.Forms._
 import models.persistance.ReleaseDAO
 import models.persistance.TSVFileDAO
 import models.persistance.SampleDAO
+import models.persistance.PreferredHeaderDAO
 
 import java.io.File
 import java.util.Scanner
@@ -83,7 +84,7 @@ object SampleSelection extends Controller {
          tsvFile.close()
          var isColumnNameInSettingsArray: ArrayBuffer[Boolean] = new ArrayBuffer()
          for (headerName <- tsvHeader.get) {
-            isColumnNameInSettingsArray.+=(isInSettings(headerName))
+            isColumnNameInSettingsArray.+=(PreferredHeaderDAO.isPreferredHeaderNameForUser(headerName, rs.request.session.get("username").get)(rs.dbSession))
          }
          val releaseName = rs.request.session.get("releaseName").get
          if (TSVFileDAO.tsvFileExists(fileName)(rs.dbSession)) {
@@ -166,13 +167,6 @@ object SampleSelection extends Controller {
          counter += 1
       }
       return returnList
-   }
-
-   def isInSettings(headerName: String): Boolean = {
-      if (headerName.equals("analyzed_sample_id")) {
-         return true
-      }
-      return false
    }
 
    def fileContentsAreEqual(file1: File, file2: File): Boolean = {
