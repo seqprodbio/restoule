@@ -2,8 +2,10 @@ package controllers;
 
 import play.api._
 import play.api.mvc._
+import play.api.db.slick._
 import play.api.data.{ Form }
 import play.api.data.Forms._
+import models.persistance.ReleaseDAO
 
 object EgaReleases extends Controller {
 
@@ -13,13 +15,13 @@ object EgaReleases extends Controller {
 
    val selectReleaseForm = Form("select" -> list(nonEmptyText))
 
-   def viewEgaReleases = Action { implicit request =>
-      Ok(views.html.egaReleasesPage(getReleaseNames()))
+   def viewEgaReleases = DBAction { implicit rs =>
+      Ok(views.html.egaReleasesPage(ReleaseDAO.getReleaseNames()(rs.dbSession)))
    }
 
-   def addEgaRelease = Action { implicit request =>
-      var newSession = request.session
-      if (request.session.get("invalidViewRelease").isDefined) {
+   def addEgaRelease = DBAction { implicit rs =>
+      var newSession = rs.request.session
+      if (rs.request.session.get("invalidViewRelease").isDefined) {
          newSession = newSession - "invalidViewRelease"
       }
       addReleaseForm.bindFromRequest().fold(
@@ -28,12 +30,13 @@ object EgaReleases extends Controller {
             Redirect(routes.EgaReleases.viewEgaReleases()).withSession(newSession)
          },
          releaseName => {
-            if (releaseNameAlreadyExists(releaseName)) {
+            if (ReleaseDAO.releaseNameExists(releaseName)(rs.dbSession)) {
                newSession = newSession + ("invalidNewReleaseName" -> "There already exists a release with that name!")
                Redirect(routes.EgaReleases.viewEgaReleases()).withSession(newSession)
             } else {
+               ReleaseDAO.createRelease(releaseName, rs.request.session.get("username").get)(rs.dbSession)
                newSession = newSession + ("releaseName" -> releaseName)
-               if (request.session.get("invalidNewReleaseName").isDefined) {
+               if (rs.request.session.get("invalidNewReleaseName").isDefined) {
                   newSession = newSession - "invalidNewReleaseName"
                }
                Redirect(routes.SampleSelection.viewSampleSelectionPage).withSession(newSession)
@@ -64,17 +67,5 @@ object EgaReleases extends Controller {
                Redirect(routes.EgaReleases.viewEgaReleases()).withSession(newSession)
             }
          })
-   }
-
-   def releaseNameAlreadyExists(releaseName: String): Boolean = {
-      if (getReleaseNames() contains releaseName) {
-         return true
-      } else {
-         return false
-      }
-   }
-
-   def getReleaseNames(): List[String] = {
-      return List("Release 15 2013-11-21", "Release 15a 2013-10-01", "Release 13 2013-09-22")
    }
 }

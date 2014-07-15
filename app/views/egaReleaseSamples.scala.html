@@ -159,7 +159,7 @@
         <form action="@routes.EgaReleaseSamples.selectFileSamples" method="POST" id="filenameForm">
             <div>
                 <div class="FileNameDiv" style="border-left:solid" id="allFilesDiv" onclick="selectFileName('all')" onmouseover="growFileNameDiv('allFilesDiv')" onmouseout ="normalizeFileNameDiv('allFilesDiv')">
-                    @if(!session.get("viewFilesSamples").isDefined || session.get("viewFilesSamples").get.equals("all")){
+                    @if(!session.get("viewFilesSamples").isDefined || session.get("viewFilesSamples").get.equals("all") || !filesInRelease.contains(session.get("viewFilesSamples").get)){
                         <b>&nbspAll&nbsp</b>
                     } else {
                         &nbspAll&nbsp
@@ -203,7 +203,7 @@
                 <tr>
                     @if(sample.complete == true){
                         <td class="completeContentCell">&nbsp@(sample.name)&nbsp</td>
-                        <td class="completeContentCell">&nbsp@(sample.Fs)&nbsp</td>
+                        <td class="completeContentCell">&nbsp@(sample.fs)&nbsp</td>
                         <td class="completeContentCell">&nbsp@(sample.box)&nbsp</td>
                         <td class="completeContentCell">&nbsp@(sample.run)&nbsp</td>
                         <td class="completeContentCell">&nbsp@(sample.barcode)&nbsp</td>
@@ -211,7 +211,7 @@
                         <td class="completeContentCell">&nbsp@(sample.libraryStrategy)&nbsp</td>
                     } else {
                         <td class="incompleteContentCell">&nbsp@(sample.name)&nbsp</td>
-                        <td class="incompleteContentCell">&nbsp@(sample.Fs)&nbsp</td>
+                        <td class="incompleteContentCell">&nbsp@(sample.fs)&nbsp</td>
                         <td class="incompleteContentCell">&nbsp@(sample.box)&nbsp</td>
                         <td class="incompleteContentCell">&nbsp@(sample.run)&nbsp</td>
                         <td class="incompleteContentCell">&nbsp@(sample.barcode)&nbsp</td>
