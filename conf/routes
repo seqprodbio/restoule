@@ -22,6 +22,10 @@ POST    /egaReleaseFileSamples      controllers.EgaReleaseSamples.selectFileSamp
 GET     /submitXML                  controllers.XMLSubmission.viewSubmissionPage
 POST    /submitXML                  controllers.XMLSubmission.processServerSubmission
 GET     /submittedXML               controllers.XMLSubmission.viewSubmittedPage
+GET     /viewFiles                  controllers.ViewFiles.viewFiles
+POST    /viewFiles                  controllers.ViewFiles.changeFileSelections
+GET     /loadingFiles               controllers.ViewFiles.loadingPage
+POST    /loadingFiles               controllers.ViewFiles.updateFiles
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)

@@ -1,0 +1,194 @@
+@(sampleInfoArray: List[SampleFileInfo])(session : Session)
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <style>
+            .completeOptions {
+                float:right
+            }
+            
+            .leftCells {
+                border-top: 1px solid black;
+                border-bottom: 1px solid black;
+                border-left: 1px solid black;
+            }
+            
+            .middleCells {
+                border-top: 1px solid black;
+                border-bottom: 1px solid black;
+            }
+            
+            .rightCells {
+                border-top: 1px solid black;
+                border-bottom: 1px solid black;
+                border-right: 1px solid black;
+            }
+            
+            .dataTable {
+                margin: 0 auto;
+            }
+            
+            #refreshButton {
+                margin: 0 auto;
+                text-align:center;
+                background-color: #66ffcc;
+                border: 2px solid black;
+                width: 150px;
+            }
+        </style>
+        <script>
+            function setHeaderWidths(){
+                document.getElementById("fileNameHeader").style.width = (document.getElementById("emptyLeft").offsetWidth + "px");
+                document.getElementById("uploadedHeader").style.width = (document.getElementById("emptyMiddle").offsetWidth + "px");
+                document.getElementById("missingHeader").style.width = (document.getElementById("emptyRight").offsetWidth + "px");
+            }
+            
+            function boldById(id){
+                document.getElementById(id).style.fontWeight = "bold";
+            }
+            
+            function unBoldById(id){
+                document.getElementById(id).style.fontWeight = "normal";
+            }
+            
+            function submitOptionsForm(id){
+                if(id !== "all"){ 
+                    document.getElementById("all").value = "false";
+                }
+                if(id !== "complete"){ 
+                    document.getElementById("complete").value = "false";
+                }
+                if(id !== "incomplete"){ 
+                    document.getElementById("incomplete").value = "false";
+                }
+                if(id !== "ftp"){ 
+                    document.getElementById("ftp").value = "false";
+                }
+                if(id !== "local"){ 
+                    document.getElementById("local").value = "false";
+                }
+                
+                document.getElementById(id).value = "true";
+                document.getElementById(id + "Cell").style.fontWeight = "normal";
+                document.getElementById("optionsForm").submit();
+            }
+            
+            function submitUpdateForm(){
+                document.getElementById("refreshButton").innerHTML = "<br>Loading<br><br>";
+                document.getElementById("updateForm").submit();
+            }
+            
+        </script>
+    </head>
+    
+    <body onload="setHeaderWidths()">
+        <h2 style="float:left">&nbsp&nbsp&nbspFiles</h2>
+        <form action="@routes.ViewFiles.changeFileSelections" method="POST" id="optionsForm">
+            <table style="float:right">
+                <tr>
+                    <td>Completeness: &nbsp&nbsp&nbsp&nbsp&nbsp</td>
+                    <div class="completeOptions">
+                        @if(!session.get("completeness").isDefined || (session.get("completeness").isDefined && session.get("completeness").get.equals("all"))){
+                            <td id="allCell" onmouseover="boldById('allCell')" onclick="submitOptionsForm('all')"><b>&nbsp All &nbsp<b></td>
+                        } else {
+                            <td id="allCell" onmouseover="boldById('allCell')" onmouseout="unBoldById('allCell')" onclick="submitOptionsForm('all')">&nbsp All &nbsp</td>
+                        }
+                        <input type="hidden" name="all" value="false" id="all" />
+                    </div>
+                    <div class="completeOptions">
+                        @if(session.get("completeness").isDefined && session.get("completeness").get.equals("complete")){
+                            <td id="completeCell" onmouseover="boldById('completeCell')" onclick="submitOptionsForm('complete')"><b>&nbsp Complete &nbsp</b></td>
+                        } else {
+                            <td id="completeCell" onmouseover="boldById('completeCell')" onmouseout="unBoldById('completeCell')" onclick="submitOptionsForm('complete')">&nbsp Complete &nbsp</td>
+                        }
+                        <input type="hidden" name="complete" value="false" id="complete" />
+                    </div>
+                    <div class="completeOptions">
+                        @if(session.get("completeness").isDefined && session.get("completeness").get.equals("incomplete")){
+                            <td id="incompleteCell" onmouseover="boldById('incompleteCell')" onclick="submitOptionsForm('incomplete')"><b>&nbsp Incomplete &nbsp</b></td>
+                        } else {
+                            <td id="incompleteCell" onmouseover="boldById('incompleteCell')" onmouseout="unBoldById('incompleteCell')" onclick="submitOptionsForm('incomplete')">&nbsp Incomplete &nbsp</td>
+                        }
+                        <input type="hidden" name="incomplete" value="false" id="incomplete" />
+                    </div>
+                </tr>
+            </table>
+            <br>
+            <br>
+            <table style="float:right">
+                <tr>
+                    <td>File Location: &nbsp&nbsp</td>
+                    <div class="originLocationOptions">
+                        @if(!session.get("fileOriginLocation").isDefined || (session.get("fileOriginLocation").isDefined && session.get("fileOriginLocation").get.equals("ftp"))){
+                            <td id="ftpCell" onmouseover="boldById('ftpCell')" onclick="submitOptionsForm('ftp')"><b>&nbsp FTP Server &nbsp</b></td>
+                        } else {
+                            <td id="ftpCell" onmouseover="boldById('ftpCell')" onmouseout="unBoldById('ftpCell')" onclick="submitOptionsForm('ftp')">&nbsp FTP Server &nbsp</td>
+                        }
+                        <input type="hidden" name="ftp" value="false" id="ftp" />
+                    </div>
+                    <div class="originLocationOptions">
+                        @if(session.get("fileOriginLocation").isDefined && session.get("fileOriginLocation").get.equals("local")){
+                            <td id="localCell" onmouseover="boldById('localCell')" onclick="submitOptionsForm('local')"><b>&nbsp Local Directories&nbsp</b></td>
+                        } else {
+                            <td id="localCell" onmouseover="boldById('localCell')" onmouseout="unBoldById('localCell')" onclick="submitOptionsForm('local')">&nbsp Local Directories&nbsp</td>
+                        }
+                        <input type="hidden" name="local" value="false" id="local" />
+                    </div>
+                </tr>
+            </table>
+        </form>
+        <br>
+        <br>
+        <br>
+        <br>
+        <div style="margin-left:0px; position:relative">
+            <div style="overflow-y:scroll; height: 480px" id="rowDiv">
+                <table style="border-collapse: collapse;" class="dataTable" id="bottomDataTable">
+                    <thead style="position:absolute; margin-left:-1px; background-color:white">
+                        <tr align="center">
+                            <th class="leftCells" id="fileNameHeader">Filename</th>
+                            <th class="middleCells" id="uploadedHeader">&nbsp&nbspFiletypes uploaded&nbsp&nbsp</th>
+                            <th class="rightCells" id="missingHeader">&nbspFiletypes missing&nbsp</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <th id="emptyLeft">Filename</th>
+                            <th id="emptyMiddle">&nbsp&nbspFiletypes uploaded&nbsp&nbsp</th>
+                            <th id="emptyRight">&nbspFiletypes missing&nbsp</th>
+                        </tr>
+                        @for(sampleFileInfo: SampleFileInfo <- sampleInfoArray){
+                            <tr align="center" style="background-color:
+                            @if(sampleFileInfo.missingFileTypes.isEmpty){
+                                #ccff99
+                            } else {
+                                #ff6e6e
+                            }
+                            ;">
+                                <td class="leftCells">@(sampleFileInfo.name)</td>
+                                <td class="middleCells">
+                                @for(existingType <- sampleFileInfo.existingFileTypes){
+                                    @(existingType)
+                                    <br>
+                                }</td>
+                                <td class="rightCells">
+                                @for(missingType <- sampleFileInfo.missingFileTypes){
+                                    @(missingType)
+                                    <br>
+                                }</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <br>
+        <br>
+        <form action="@routes.ViewFiles.updateFiles" method="POST" id="updateForm">
+            <div onclick="submitUpdateForm()" id="refreshButton">
+                <br>Refresh<br><br>
+            </div>
+        </form>
+    </body>
+</html>
