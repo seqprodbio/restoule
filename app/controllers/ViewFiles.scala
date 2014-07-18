@@ -15,6 +15,7 @@ import models.persistance.SampleFileDAO
 import models.FileRetrival
 import models.persistance.LocalDirectoryDAO
 import models.persistance.FTPCredentialsDAO
+import scala.collection.mutable.Buffer
 
 object ViewFiles extends Controller {
 
@@ -46,7 +47,8 @@ object ViewFiles extends Controller {
          } else {
             sampleFileInfo = sampleFileInfo.filter(s => !s.missingFileTypes.isEmpty)
          }
-         Ok(views.html.viewFiles(sampleFileInfo.toList)(res.request.session))
+         var sampleFileInfoBuffer: Buffer[SampleFileInfo] = sampleFileInfo.toBuffer.sortWith(sortSampleFileInfoByName)
+         Ok(views.html.viewFiles(sampleFileInfoBuffer.toList)(res.request.session))
       } else {
          Redirect(routes.ViewFiles.loadingPage).withSession(res.request.session)
       }
@@ -122,9 +124,9 @@ object ViewFiles extends Controller {
       var sampleFileInfo: HashSet[SampleFileInfo] = new HashSet[SampleFileInfo]();
 
       for (sampleFile: SampleFile <- sampleFiles) {
-         var addedFileExtension = ""
+         var addedFileExtension = "" //This holds the .gpg, .md5, and .gpg.md5 part of the file extension
          var fileName = ""
-         var originalFileExtension = ""
+         var originalFileExtension = "" //This holds the .bam or the .fastq.gz part of the file extension
          var fileNameParts = sampleFile.fileName.split("\\.")
          var length = fileNameParts.length
          var lastPart = fileNameParts(length - 1)
@@ -138,13 +140,28 @@ object ViewFiles extends Controller {
             fourthLastPart = fileNameParts(length - 4)
          }
 
-         if ((lastPart.equals("md5") || lastPart.equals("gpg")) && (secondLastPart.equals("bam") || (length > 2 && secondLastPart.equals("gz") && thirdLastPart.equals("fastq")))) {
+         if (lastPart.equals("bam") || (length > 2 && lastPart.equals("gz"))) {
+            var fileNameEndPart = length - 1
+            if (lastPart.equals("bam")) {
+               fileNameEndPart -= 1
+               originalFileExtension = lastPart
+            } else { //if it equals gz meaning it's a fastq.gz file
+               fileNameEndPart -= 2
+               originalFileExtension = secondLastPart + "." + lastPart
+            }
+            var counter = 0;
+            for (counter <- 0 to fileNameEndPart) {
+               fileName += fileNameParts(counter) + "."
+            }
+            fileName = fileName.substring(0, fileName.length - 1)
+
+         } else if ((lastPart.equals("md5") || lastPart.equals("gpg")) && (secondLastPart.equals("bam") || (length > 2 && secondLastPart.equals("gz") && thirdLastPart.equals("fastq")))) {
             addedFileExtension = lastPart
             var endPart = length - 1
             if (secondLastPart.equals("bam")) {
                endPart -= 2
                originalFileExtension = secondLastPart
-            } else {
+            } else { //if it equals gz meaning it's a fastq.gz file
                endPart -= 3
                originalFileExtension = thirdLastPart + "." + secondLastPart
             }
@@ -160,7 +177,7 @@ object ViewFiles extends Controller {
             if (thirdLastPart.equals("bam")) {
                endPart -= 3
                originalFileExtension = thirdLastPart
-            } else {
+            } else { //if it equals gz meaning it's a fastq.gz file
                endPart -= 4
                originalFileExtension = fourthLastPart + "." + thirdLastPart
             }
@@ -175,19 +192,32 @@ object ViewFiles extends Controller {
             var oldSampleFileInfo = sampleFileInfo.find(s => s.name.equals(fileName))
             if (!oldSampleFileInfo.isDefined) {
                var missingTypes: ListBuffer[String] = new ListBuffer[String]()
-               if (!addedFileExtension.equals("gpg")) {
-                  missingTypes += originalFileExtension + ".gpg"
+               if (!addedFileExtension.equals("")) {
+                  if (!addedFileExtension.equals("gpg")) {
+                     missingTypes += originalFileExtension + ".gpg"
+                  }
+                  if (!addedFileExtension.equals("md5")) {
+                     missingTypes += originalFileExtension + ".md5"
+                  }
+                  if (!addedFileExtension.equals("gpg.md5")) {
+                     missingTypes += originalFileExtension + ".gpg.md5"
+                  }
                }
-               if (!addedFileExtension.equals("md5")) {
-                  missingTypes += originalFileExtension + ".md5"
+               var fileExtension = ""
+               if (addedFileExtension.equals("")) {
+                  fileExtension = originalFileExtension
+               } else {
+                  fileExtension = originalFileExtension + "." + addedFileExtension
                }
-               if (!addedFileExtension.equals("gpg.md5")) {
-                  missingTypes += originalFileExtension + ".gpg.md5"
-               }
-               var newSampleFileInfo = new SampleFileInfo(fileName, List(originalFileExtension + "." + addedFileExtension), missingTypes.toList)
+               var newSampleFileInfo = new SampleFileInfo(fileName, List(fileExtension), missingTypes.toList)
                sampleFileInfo.add(newSampleFileInfo)
             } else {
-               var fileType = originalFileExtension + "." + addedFileExtension
+               var fileType = ""
+               if (addedFileExtension.equals("")) {
+                  fileType = originalFileExtension
+               } else {
+                  fileType = originalFileExtension + "." + addedFileExtension
+               }
                var missingTypes: ListBuffer[String] = oldSampleFileInfo.get.missingFileTypes.to[ListBuffer]
                var existingTypes: ListBuffer[String] = oldSampleFileInfo.get.existingFileTypes.to[ListBuffer]
                if (!originalFileExtension.equals(existingTypes.head.substring(0, originalFileExtension.length))) {
@@ -209,5 +239,9 @@ object ViewFiles extends Controller {
       }
 
       return sampleFileInfo;
+   }
+
+   def sortSampleFileInfoByName(sampleFileInfo: SampleFileInfo, sampleFileInfo2: SampleFileInfo) = {
+      sampleFileInfo.name.compareToIgnoreCase(sampleFileInfo2.name) < 0
    }
 }
