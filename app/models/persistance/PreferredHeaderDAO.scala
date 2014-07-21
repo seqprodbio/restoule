@@ -21,7 +21,7 @@ object PreferredHeaderDAO {
 
    def createPreferredHeader(userName: String, headerName: String) = { implicit session: Session =>
       val userId = UserDAO.getIdFromName(userName)(session)
-      var newPreferredHeader = new PreferredHeader(None, userId, headerName, new java.sql.Date(System.currentTimeMillis()))
+      var newPreferredHeader = new PreferredHeader(None, userId, headerName, new java.sql.Timestamp(System.currentTimeMillis()))
       preferredHeaders.insert(newPreferredHeader)
    }
 }

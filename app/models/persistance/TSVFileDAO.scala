@@ -40,7 +40,7 @@ object TSVFileDAO {
 
    def createTSVFile(releaseName: String, fileName: String, path: String) = { implicit session: Session =>
       val releaseId = ReleaseDAO.getReleaseIdFromName(releaseName)(session)
-      val newTSVFile = new TSVFile(None, fileName, path, new java.sql.Date(System.currentTimeMillis()))
+      val newTSVFile = new TSVFile(None, fileName, path, new java.sql.Timestamp(System.currentTimeMillis()))
       tsvFiles.insert(newTSVFile)
       ReleaseTSVFileLinkDAO.createLink(releaseId, getTSVIdFromFileName(fileName)(session).get)(session)
    }

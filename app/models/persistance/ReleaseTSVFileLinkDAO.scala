@@ -34,7 +34,7 @@ object ReleaseTSVFileLinkDAO {
    }
 
    def createLink(releaseId: Int, fileId: Int) = { implicit session: Session =>
-      val newReleaseTSVFileLink = new ReleaseTSVFileLink(None, releaseId, fileId, new java.sql.Date(System.currentTimeMillis()))
+      val newReleaseTSVFileLink = new ReleaseTSVFileLink(None, releaseId, fileId, new java.sql.Timestamp(System.currentTimeMillis()))
       releaseTSVLinks.insert(newReleaseTSVFileLink)
    }
 }

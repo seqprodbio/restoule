@@ -13,6 +13,6 @@ object FTPCredentialsDAO {
    }
 
    def createFTPCredentials(ftpSite: String, userName: String, password: String) = { implicit session: Session =>
-      ftpCredentials.insert(new FTPCredentials(None, ftpSite, userName, password, new java.sql.Date(System.currentTimeMillis())))
+      ftpCredentials.insert(new FTPCredentials(None, ftpSite, userName, password, new java.sql.Timestamp(System.currentTimeMillis())))
    }
 }

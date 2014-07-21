@@ -9,6 +9,7 @@ import models.Sample
 import models.persistance.ReleaseDAO
 import models.persistance.TSVFileDAO
 import models.persistance.SampleDAO
+import models.persistance.TSVFileSampleLinkDAO
 
 object EgaReleaseSamples extends Controller {
 
@@ -71,12 +72,12 @@ object EgaReleaseSamples extends Controller {
       for (filename <- filenames) {
          returnList = returnList ::: getSamplesFromFile(filename, completenessType)(session)
       }
-      returnList
+      returnList.distinct
    }
 
    def getSamplesFromFile(filename: String, completenessType: String) = { implicit session: play.api.db.slick.Session =>
       var returnList: List[Sample] = List()
-      var samplesFromFile = SampleDAO.getSamplesFromFile(filename)(session)
+      var samplesFromFile: List[Sample] = TSVFileSampleLinkDAO.getAllSamplesInTSVFile(filename)(session)
       for (sample <- samplesFromFile) {
          if ((completenessType.equals("all") || completenessType.equals("incomplete")) && !sample.complete) {
             returnList = returnList ::: List(sample)

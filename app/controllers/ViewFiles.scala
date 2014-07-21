@@ -16,6 +16,8 @@ import models.FileRetrival
 import models.persistance.LocalDirectoryDAO
 import models.persistance.FTPCredentialsDAO
 import scala.collection.mutable.Buffer
+import models.persistance.SampleSampleFileLinkDAO
+import models.persistance.SampleDAO
 
 object ViewFiles extends Controller {
 
@@ -102,18 +104,33 @@ object ViewFiles extends Controller {
 
    def updateFiles() = DBAction { implicit res =>
       loading = true
+      SampleFileDAO.deleteAll()(res.dbSession)
+      SampleSampleFileLinkDAO.deleteAll()(res.dbSession)
       for (ftpCredentials <- FTPCredentialsDAO.getAllFTPCredentials()(res.dbSession)) {
          var ftpFilePaths = FileRetrival.getFilePathsFromFTP(ftpCredentials.ftpSite, ftpCredentials.userName, ftpCredentials.password)
-         SampleFileDAO.deleteAll()(res.dbSession)
          for (ftpFilePath <- ftpFilePaths) {
+            var pathParts = ftpFilePath.split("/")
+            var fileName = pathParts(pathParts.length - 1)
             SampleFileDAO.createSampleFile(ftpFilePath, "ftp")(res.dbSession)
+            for (sampleName <- SampleDAO.getAllSampleNames()(res.dbSession)) {
+               if (fileName.indexOf(sampleName) != -1) {
+                  SampleSampleFileLinkDAO.createLink(sampleName, fileName)(res.dbSession)
+               }
+            }
          }
       }
 
       for (localDir <- LocalDirectoryDAO.getAllDirectories()(res.dbSession)) {
          var localFilePaths = FileRetrival.getFilePathsFromLocalDir(localDir.path)
          for (localFilePath <- localFilePaths) {
+            var pathParts = localFilePath.split("/")
+            var fileName = pathParts(pathParts.length - 1)
             SampleFileDAO.createSampleFile(localFilePath, "local")(res.dbSession)
+            for (sampleName <- SampleDAO.getAllSampleNames()(res.dbSession)) {
+               if (fileName.indexOf(sampleName) != -1) {
+                  SampleSampleFileLinkDAO.createLink(sampleName, fileName)(res.dbSession)
+               }
+            }
          }
       }
       loading = false

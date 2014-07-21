@@ -14,6 +14,6 @@ object LocalDirectoryDAO {
    }
 
    def createLocalDirectory(path: String) = { implicit session: Session =>
-      localDirectories.insert(new LocalDirectory(None, path, new java.sql.Date(System.currentTimeMillis())))
+      localDirectories.insert(new LocalDirectory(None, path, new java.sql.Timestamp(System.currentTimeMillis())))
    }
 }

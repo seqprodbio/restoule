@@ -17,7 +17,7 @@ object UserDAO {
    }
 
    def createUserWithName(username: String) = { implicit session: Session =>
-      val newUser = new User(None, username, new java.sql.Date(System.currentTimeMillis()))
+      val newUser = new User(None, username, new java.sql.Timestamp(System.currentTimeMillis()))
       users.insert(newUser)
    }
 

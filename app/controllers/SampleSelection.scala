@@ -5,17 +5,18 @@ import play.api.mvc._
 import play.api.db.slick._
 import play.api.data.{ Form }
 import play.api.data.Forms._
-
+import models.persistance.SampleFileDAO
+import models.persistance.TSVFileSampleLinkDAO
 import models.persistance.ReleaseDAO
 import models.persistance.TSVFileDAO
 import models.persistance.SampleDAO
 import models.persistance.PreferredHeaderDAO
-
 import java.io.File
 import java.util.Scanner
 import scala.io.Source
 import scala.util.matching.Regex
 import scala.collection.mutable.ArrayBuffer
+import models.persistance.SampleSampleFileLinkDAO
 
 object SampleSelection extends Controller {
 
@@ -130,8 +131,17 @@ object SampleSelection extends Controller {
                }
 
                for (sampleName <- sampleNames) {
-                  if (!SampleDAO.sampleExists(tsvFileName, sampleName)(rs.dbSession)) {
-                     SampleDAO.createSample(tsvFileName, sampleName, "", "", "", "", "", "", true)(rs.dbSession)
+                  if (!SampleDAO.sampleExistsInFile(tsvFileName, sampleName)(rs.dbSession)) {
+                     if (SampleDAO.sampleExists(sampleName)(rs.dbSession)) {
+                        TSVFileSampleLinkDAO.createTSVFileSampleLink(tsvFileName, sampleName)(rs.dbSession)
+                     } else {
+                        SampleDAO.createSample(tsvFileName, sampleName, "", "", "", "", "", "", true)(rs.dbSession)
+                     }
+                  }
+                  for (sampleFileName <- SampleFileDAO.getAllSampleFileNames()(rs.dbSession)) {
+                     if (sampleFileName.indexOf(sampleName) != -1) {
+                        SampleSampleFileLinkDAO.createLink(sampleName, sampleFileName)(rs.dbSession)
+                     }
                   }
                }
 

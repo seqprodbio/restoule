@@ -22,7 +22,7 @@ object ReleaseDAO {
    }
 
    def createRelease(releaseName: String, username: String) = { implicit session: Session =>
-      val newRelease = new Release(None, releaseName, UserDAO.getIdFromName(username)(session), new java.sql.Date(System.currentTimeMillis()))
+      val newRelease = new Release(None, releaseName, UserDAO.getIdFromName(username)(session), new java.sql.Timestamp(System.currentTimeMillis()))
       releases.insert(newRelease)
    }
 
