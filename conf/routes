@@ -19,6 +19,8 @@ GET     /egaReleaseSamples          controllers.EgaReleaseSamples.viewEgaRelease
 POST    /egaReleaseSamples          controllers.EgaReleaseSamples.changeCompletenessDisplayed
 GET     /egaReleaseFileSamples      controllers.EgaReleaseSamples.viewEgaReleaseSamples
 POST    /egaReleaseFileSamples      controllers.EgaReleaseSamples.selectFileSamples
+GET     /generateXMLs               controllers.XMLGeneration.viewXMLGenerationPage
+POST    /generateXMLs               controllers.XMLGeneration.generateXMLs
 GET     /submitXML                  controllers.XMLSubmission.viewSubmissionPage
 POST    /submitXML                  controllers.XMLSubmission.processServerSubmission
 GET     /submittedXML               controllers.XMLSubmission.viewSubmittedPage

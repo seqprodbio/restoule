@@ -55,6 +55,10 @@ object TSVFileDAO {
       tsvFiles.filter(t => t.name === fileName).map(t => t.id).firstOption
    }
 
+   def getFileNameFromId(fileId: Int) = { implicit session: Session =>
+      tsvFiles.filter(t => t.id === fileId).map(t => t.name).first
+   }
+
    def tsvFileExists(fileName: String) = { implicit session: Session =>
       if (getTSVIdFromFileName(fileName)(session).isDefined) {
          true
