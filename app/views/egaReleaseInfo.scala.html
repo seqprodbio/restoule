@@ -1,0 +1,27 @@
+@(existingReleaseInfo: ReleaseInfo)()
+
+<!DOCTYPE html>
+<html>
+    <body>
+        <h3>EGA Release Info</h3>
+        <br>
+        <p style="margin:0px">Before adding samples to your release, please fill in some important information.</p>
+        <p style="margin:0px"> You can return to this url to change any information later if needed.</p>
+        <br>
+        <br>
+        <form action="@routes.EgaReleaseInfo.updateEgaReleaseInfo" method="POST">
+            <label for="studyName">Study Name:&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp</label>
+            <input type="text" name="studyName" id="studyName" value="@(existingReleaseInfo.studyName)"></input>
+            <br><br>
+            <div>
+                <div style="float:left">
+                    <br><br>
+                    <label for="studyAbstract">Study Abstract:&nbsp&nbsp&nbsp</label>
+                </div>
+                <textarea rows="5" cols="50" name="studyAbstract" id="studyAbstract">@(existingReleaseInfo.studyAbstract)</textarea>
+            </div>
+            <br><br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp
+            <input type="submit" value="Submit">
+        </form>
+    </body>
+</html>

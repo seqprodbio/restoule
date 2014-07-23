@@ -11,6 +11,8 @@ GET     /egaReleases                controllers.EgaReleases.viewEgaReleases
 POST    /egaReleases                controllers.EgaReleases.addEgaRelease
 GET     /egaReleasesOld             controllers.EgaReleases.viewEgaReleases
 POST    /egaReleasesOld             controllers.EgaReleases.openEgaRelease
+GET     /egaReleaseInfo             controllers.EgaReleaseInfo.viewEgaReleaseInfo
+POST    /egaReleaseInfo             controllers.EgaReleaseInfo.updateEgaReleaseInfo
 GET     /sampleSelection            controllers.SampleSelection.viewSampleSelectionPage
 POST    /sampleSelection            controllers.SampleSelection.upload
 GET     /sampleSelectionWithTable   controllers.SampleSelection.viewSampleSelectionPage
