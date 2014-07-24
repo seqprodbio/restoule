@@ -40,6 +40,10 @@ object SampleFileDAO {
       sampleFiles.filter(s => s.fileName === fileName).map(s => s.id).first
    }
 
+   def getSampleFileFromId(id: Int) = { implicit session: Session =>
+      sampleFiles.filter(s => s.id === id).first
+   }
+
    def createSampleFile(path: String, origin: String) = { implicit session: Session =>
       var pathParts = path.split("/")
       var fileName = pathParts(pathParts.length - 1)

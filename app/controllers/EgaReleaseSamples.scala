@@ -5,11 +5,15 @@ import play.api.mvc._
 import play.api.db.slick._
 import play.api.data.{ Form }
 import play.api.data.Forms._
+import scala.collection.mutable.ListBuffer
 import models.Sample
+import models.SampleFile
 import models.persistance.ReleaseDAO
 import models.persistance.TSVFileDAO
 import models.persistance.SampleDAO
+import models.persistance.SampleFileDAO
 import models.persistance.TSVFileSampleLinkDAO
+import models.persistance.SampleSampleFileLinkDAO
 
 object EgaReleaseSamples extends Controller {
 
@@ -35,13 +39,25 @@ object EgaReleaseSamples extends Controller {
             completenessOfSamples = "all"
          }
 
-         var samplesFromFiles: List[Sample] = List()
+         var samplesFromTSVFiles: List[Sample] = List()
          if (rs.request.session.get("viewFilesSamples").isDefined && (filesInRelease.exists(_.equals(rs.request.session.get("viewFilesSamples").get)))) {
-            samplesFromFiles = getSamplesFromFile(rs.request.session.get("viewFilesSamples").get, completenessOfSamples)(rs.dbSession)
+            samplesFromTSVFiles = getSamplesFromFile(rs.request.session.get("viewFilesSamples").get, completenessOfSamples)(rs.dbSession)
          } else {
-            samplesFromFiles = getSamplesFromAllFiles(filesInRelease, completenessOfSamples)(rs.dbSession)
+            samplesFromTSVFiles = getSamplesFromAllFiles(filesInRelease, completenessOfSamples)(rs.dbSession)
          }
-         Ok(views.html.egaReleaseSamples(filesInRelease, samplesFromFiles, completenessOfSamples))
+
+         var sampleFilesFromTSVFiles: Map[Sample, List[SampleFile]] = Map()
+         for (sample <- samplesFromTSVFiles) {
+            var sampleFileIds = SampleSampleFileLinkDAO.getFileIdsFromSampleName(sample.name)(rs.dbSession)
+            var sampleFiles: ListBuffer[SampleFile] = new ListBuffer()
+
+            for (sampleFileId <- sampleFileIds) {
+               sampleFiles += SampleFileDAO.getSampleFileFromId(sampleFileId)(rs.dbSession)
+            }
+
+            sampleFilesFromTSVFiles += (sample -> sampleFiles.toList)
+         }
+         Ok(views.html.egaReleaseSamples(filesInRelease, sampleFilesFromTSVFiles, completenessOfSamples))
       } else {
          Redirect(routes.EgaReleases.viewEgaReleases)
       }

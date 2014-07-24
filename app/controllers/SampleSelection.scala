@@ -135,7 +135,7 @@ object SampleSelection extends Controller {
                      if (SampleDAO.sampleExists(sampleName)(rs.dbSession)) {
                         TSVFileSampleLinkDAO.createTSVFileSampleLink(tsvFileName, sampleName)(rs.dbSession)
                      } else {
-                        SampleDAO.createSample(tsvFileName, sampleName, "", "", "", "", "", "", true)(rs.dbSession)
+                        SampleDAO.createSample(tsvFileName, sampleName)(rs.dbSession)
                      }
                   }
                   for (sampleFileName <- SampleFileDAO.getAllSampleFileNames()(rs.dbSession)) {

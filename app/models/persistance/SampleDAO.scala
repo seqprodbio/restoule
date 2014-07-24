@@ -13,8 +13,8 @@ object SampleDAO {
       samples.filter(s => s.id === id).first
    }
 
-   def createSample(tsvFileName: String, name: String, fs: String, box: String, run: String, barcode: String, librarySource: String, libraryStrategy: String, complete: Boolean) = { implicit session: Session =>
-      val newSample = new Sample(None, name, fs, box, run, barcode, librarySource, libraryStrategy, complete, new java.sql.Timestamp(System.currentTimeMillis()))
+   def createSample(tsvFileName: String, name: String) = { implicit session: Session =>
+      val newSample = new Sample(None, name, false, new java.sql.Timestamp(System.currentTimeMillis()))
       samples.insert(newSample)
       TSVFileSampleLinkDAO.createTSVFileSampleLink(tsvFileName, name)(session)
    }

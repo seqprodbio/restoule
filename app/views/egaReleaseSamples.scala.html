@@ -1,4 +1,4 @@
-@(filesInRelease : List[String], samplesInFile : List[Sample], completeness : String = "all")(implicit session : Session)
+@(tsvFilesInRelease : List[String], sampleFilesInTSVFile : Map[Sample, List[SampleFile]], completeness : String = "all")(implicit session : Session)
 
 <!DOCTYPE html>
 <html> 
@@ -24,6 +24,15 @@
                 width:100%;
                 height:0px;
                 margin-top:4px;
+            }
+            
+            #sampleTableDiv {
+                height: 650px;
+                overflow: scroll;
+            }
+            
+            #lastRowInSample {
+                border-bottom: solid 2px;
             }
             
             .headerCell{
@@ -159,13 +168,13 @@
         <form action="@routes.EgaReleaseSamples.selectFileSamples" method="POST" id="filenameForm">
             <div>
                 <div class="FileNameDiv" style="border-left:solid" id="allFilesDiv" onclick="selectFileName('all')" onmouseover="growFileNameDiv('allFilesDiv')" onmouseout ="normalizeFileNameDiv('allFilesDiv')">
-                    @if(!session.get("viewFilesSamples").isDefined || session.get("viewFilesSamples").get.equals("all") || !filesInRelease.contains(session.get("viewFilesSamples").get)){
+                    @if(!session.get("viewFilesSamples").isDefined || session.get("viewFilesSamples").get.equals("all") || !tsvFilesInRelease.contains(session.get("viewFilesSamples").get)){
                         <b>&nbspAll&nbsp</b>
                     } else {
                         &nbspAll&nbsp
                     }
                 </div>
-                @for(filename <- filesInRelease){
+                @for(filename <- tsvFilesInRelease){
                     <div class="FileNameDiv" onclick="selectFileName('@(filename)')" onmouseover="growFileNameDiv('@(filename)Div')" onmouseout ="normalizeFileNameDiv('@(filename)Div')" id="@(filename)Div">
                         @if(session.get("viewFilesSamples").isDefined && session.get("viewFilesSamples").get.equals(filename) ){
                             <b>&nbsp@(filename)&nbsp</b>
@@ -182,53 +191,94 @@
         </form>
         
         <br><br><br><br>
-        <table style="border-collapse:collapse">
-            <tr>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td colspan="2" class="headerCell">Bam Header</td>
-                <td colspan="2" class="headerCell">Seqware</td>
-            </tr>
-            <tr>
-                <td class="headerCell">&nbspSample&nbsp</td>
-                <td class="headerCell">&nbspFS&nbsp</td>
-                <td class="headerCell">&nbspBox&nbsp</td>
-                <td class="headerCell">&nbspRun&nbsp</td>
-                <td class="headerCell">&nbspBarcode&nbsp</td>
-                <td class="headerCell">&nbspLibrary Source&nbsp</td>
-                <td class="headerCell">&nbspLibrary Strategy&nbsp</td>
-            </tr>
-            @for(sample <- samplesInFile){
+        <div id="sampleTableDiv">
+            <table style="border-collapse:collapse">
                 <tr>
-                    @if(sample.complete == true){
-                        <td class="completeContentCell">&nbsp@(sample.name)&nbsp</td>
-                        <td class="completeContentCell">&nbsp@(sample.fs)&nbsp</td>
-                        <td class="completeContentCell">&nbsp@(sample.box)&nbsp</td>
-                        <td class="completeContentCell">&nbsp@(sample.run)&nbsp</td>
-                        <td class="completeContentCell">&nbsp@(sample.barcode)&nbsp</td>
-                        <td class="completeContentCell">&nbsp@(sample.librarySource)&nbsp</td>
-                        <td class="completeContentCell">&nbsp@(sample.libraryStrategy)&nbsp</td>
-                    } else {
-                        <td class="incompleteContentCell">&nbsp@(sample.name)&nbsp</td>
-                        <td class="incompleteContentCell">&nbsp@(sample.fs)&nbsp</td>
-                        <td class="incompleteContentCell">&nbsp@(sample.box)&nbsp</td>
-                        <td class="incompleteContentCell">&nbsp@(sample.run)&nbsp</td>
-                        <td class="incompleteContentCell">&nbsp@(sample.barcode)&nbsp</td>
-                        <td class="incompleteContentCell">&nbsp@(sample.librarySource)&nbsp</td>
-                        <td class="incompleteContentCell">&nbsp@(sample.libraryStrategy)&nbsp</td>
-                    }
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td colspan="2" class="headerCell">LIMS</td>
                 </tr>
-            }
-            <tr>
-                <td class="bottomCell"></td>
-                <td class="bottomCell"></td>
-                <td class="bottomCell"></td>
-                <td class="bottomCell"></td>
-                <td class="bottomCell"></td>
-                <td class="bottomCell"></td>
-                <td class="bottomCell"></td>
-            </tr>
-        </table>
+                <tr>
+                    <td class="headerCell">&nbspSample&nbsp</td>
+                    <td class="headerCell">&nbspFilename&nbsp</td>
+                    <td class="headerCell">&nbspFS&nbsp</td>
+                    <td class="headerCell">&nbspRun&nbsp</td>
+                    <td class="headerCell">&nbspBarcode&nbsp</td>
+                    <td class="headerCell">&nbspLibrary Source&nbsp</td>
+                    <td class="headerCell">&nbspLibrary Strategy&nbsp</td>
+                </tr>
+                @for(sample <- sampleFilesInTSVFile.keys.toList.sortWith((s1, s2) => s1.created.compareTo(s2.created)<0)){
+                    @if(sample.complete == true){
+                        @if(sampleFilesInTSVFile(sample).length > 0){
+                            @for(sampleFile <- sampleFilesInTSVFile(sample)){
+                                @if(sampleFile.equals(sampleFilesInTSVFile(sample).last)){
+                                    <tr id="lastRowInSample">
+                                } else {
+                                    <tr>
+                                }
+                                    <td class="completeContentCell">&nbsp@(sample.name)&nbsp</td>
+                                    <td class="completeContentCell">&nbsp@(sampleFile.fileName)&nbsp</td>
+                                    <td class="completeContentCell">&nbsp@(sampleFile.origin)&nbsp</td>
+                                    <td class="completeContentCell">&nbsp@(sampleFile.sequencerRunName)&nbsp</td>
+                                    <td class="completeContentCell">&nbsp@(sampleFile.barcode)&nbsp</td>
+                                    <td class="completeContentCell">&nbsp@("")&nbsp</td>
+                                    <td class="completeContentCell">&nbsp@("")&nbsp</td>
+                                </tr>
+                            }
+                        } else {
+                            <tr id="lastRowInSample">
+                                <td class="completeContentCell">&nbsp@(sample.name)&nbsp</td>
+                                <td class="completeContentCell">&nbsp@("No file found")&nbsp</td>
+                                <td class="completeContentCell">&nbsp&nbsp</td>
+                                <td class="completeContentCell">&nbsp&nbsp</td>
+                                <td class="completeContentCell">&nbsp&nbsp</td>
+                                <td class="completeContentCell">&nbsp&nbsp</td>
+                                <td class="completeContentCell">&nbsp&nbsp</td>
+                            </tr>
+                        }
+                    } else {
+                        @if(sampleFilesInTSVFile(sample).length > 0){
+                            @for(sampleFile <- sampleFilesInTSVFile(sample)){
+                                @if(sampleFile.equals(sampleFilesInTSVFile(sample).last)){
+                                    <tr id="lastRowInSample">
+                                } else {
+                                    <tr>
+                                }
+                                    <td class="incompleteContentCell">&nbsp@(sample.name)&nbsp</td>
+                                    <td class="incompleteContentCell">&nbsp@(sampleFile.fileName)&nbsp</td>
+                                    <td class="incompleteContentCell">&nbsp@(sampleFile.origin)&nbsp</td>
+                                    <td class="incompleteContentCell">&nbsp@(sampleFile.sequencerRunName)&nbsp</td>
+                                    <td class="incompleteContentCell">&nbsp@(sampleFile.barcode)&nbsp</td>
+                                    <td class="incompleteContentCell">&nbsp@("")&nbsp</td>
+                                    <td class="incompleteContentCell">&nbsp@("")&nbsp</td>
+                                </tr>
+                            }
+                        } else {
+                            <tr id="lastRowInSample">
+                                <td class="incompleteContentCell">&nbsp@(sample.name)&nbsp</td>
+                                <td class="incompleteContentCell">&nbsp@("No files found")&nbsp</td>
+                                <td class="incompleteContentCell">&nbsp&nbsp</td>
+                                <td class="incompleteContentCell">&nbsp&nbsp</td>
+                                <td class="incompleteContentCell">&nbsp&nbsp</td>
+                                <td class="incompleteContentCell">&nbsp&nbsp</td>
+                                <td class="incompleteContentCell">&nbsp&nbsp</td>
+                            </tr>
+                        }
+                    }
+                }
+                <tr>
+                    <td class="bottomCell"></td>
+                    <td class="bottomCell"></td>
+                    <td class="bottomCell"></td>
+                    <td class="bottomCell"></td>
+                    <td class="bottomCell"></td>
+                    <td class="bottomCell"></td>
+                    <td class="bottomCell"></td>
+                </tr>
+            </table>
+        </div>
     </body>
 </html>
