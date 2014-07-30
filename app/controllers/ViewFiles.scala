@@ -144,67 +144,15 @@ object ViewFiles extends Controller {
          var addedFileExtension = "" //This holds the .gpg, .md5, and .gpg.md5 part of the file extension
          var fileName = ""
          var originalFileExtension = "" //This holds the .bam or the .fastq.gz part of the file extension
-         var fileNameParts = sampleFile.fileName.split("\\.")
-         var length = fileNameParts.length
-         var lastPart = fileNameParts(length - 1)
-         var secondLastPart = fileNameParts(length - 2)
-         var thirdLastPart = ""
-         var fourthLastPart = ""
-         if (length > 2) {
-            thirdLastPart = fileNameParts(length - 3)
-         }
-         if (length > 3) {
-            fourthLastPart = fileNameParts(length - 4)
+         
+         val fileExtensionRegex = "^(.+?)\\.(bam|fastq\\.gz)\\.(gpg\\.md5|gpg|md5)$".r
+         val matchOption = fileExtensionRegex.findFirstMatchIn(sampleFile.fileName)
+         if (matchOption.isDefined) {
+            fileName = matchOption.get.group(1)
+            originalFileExtension = matchOption.get.group(2)
+            addedFileExtension = matchOption.get.group(3)
          }
 
-         if (lastPart.equals("bam") || (length > 2 && lastPart.equals("gz"))) {
-            var fileNameEndPart = length - 1
-            if (lastPart.equals("bam")) {
-               fileNameEndPart -= 1
-               originalFileExtension = lastPart
-            } else { //if it equals gz meaning it's a fastq.gz file
-               fileNameEndPart -= 2
-               originalFileExtension = secondLastPart + "." + lastPart
-            }
-            var counter = 0;
-            for (counter <- 0 to fileNameEndPart) {
-               fileName += fileNameParts(counter) + "."
-            }
-            fileName = fileName.substring(0, fileName.length - 1)
-
-         } else if ((lastPart.equals("md5") || lastPart.equals("gpg")) && (secondLastPart.equals("bam") || (length > 2 && secondLastPart.equals("gz") && thirdLastPart.equals("fastq")))) {
-            addedFileExtension = lastPart
-            var endPart = length - 1
-            if (secondLastPart.equals("bam")) {
-               endPart -= 2
-               originalFileExtension = secondLastPart
-            } else { //if it equals gz meaning it's a fastq.gz file
-               endPart -= 3
-               originalFileExtension = thirdLastPart + "." + secondLastPart
-            }
-            var counter = 0;
-            for (counter <- 0 to endPart) {
-               fileName += fileNameParts(counter) + "."
-            }
-            fileName = fileName.substring(0, fileName.length - 1)
-
-         } else if (length > 2 && lastPart.equals("md5") && secondLastPart.equals("gpg") && (thirdLastPart.equals("bam") || (length > 3 && thirdLastPart.equals("gz") && fourthLastPart.equals("fastq")))) {
-            addedFileExtension = secondLastPart + "." + lastPart
-            var endPart = length - 1
-            if (thirdLastPart.equals("bam")) {
-               endPart -= 3
-               originalFileExtension = thirdLastPart
-            } else { //if it equals gz meaning it's a fastq.gz file
-               endPart -= 4
-               originalFileExtension = fourthLastPart + "." + thirdLastPart
-            }
-
-            var counter = 0;
-            for (counter <- 0 to endPart) {
-               fileName += fileNameParts(counter) + "."
-            }
-            fileName = fileName.substring(0, fileName.length - 1)
-         }
          if (!fileName.equals("")) {
             var oldSampleFileInfo = sampleFileInfo.find(s => s.name.equals(fileName))
             if (!oldSampleFileInfo.isDefined) {

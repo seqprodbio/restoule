@@ -43,6 +43,12 @@ object SampleFileDAO {
    def getSampleFileFromId(id: Int) = { implicit session: Session =>
       sampleFiles.filter(s => s.id === id).first
    }
+   
+   def getFileTypeFromId(id: Int) = { implicit session: Session =>
+      var fileName = sampleFiles.filter(s => s.id === id).map(s => s.fileName).first
+      val regex = "^(.+?)\\.(bam|fastq\\.gz)\\.(gpg\\.md5|gpg|md5)$".r
+      regex.findFirstMatchIn(fileName).get.group(2)
+   }
 
    def createSampleFile(path: String, origin: String) = { implicit session: Session =>
       var pathParts = path.split("/")
@@ -60,7 +66,6 @@ object SampleFileDAO {
       if (regex.findFirstMatchIn(fileNameWithoutExtension).isDefined) {
          var dataMatch = regex.findFirstMatchIn(fileNameWithoutExtension).get
          if (dataMatch.group(1) != null) {
-            println(dataMatch.group(1).substring(5, dataMatch.group(1).length - 1))
             try {
                swid = dataMatch.group(1).substring(5, dataMatch.group(1).length - 1).toInt
             } catch {

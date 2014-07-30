@@ -39,20 +39,24 @@ object EgaReleaseSamples extends Controller {
             completenessOfSamples = "all"
          }
 
-         var samplesFromTSVFiles: List[Sample] = List()
+         var samplesFromTSVFiles: Map[Sample, List[String]] = Map() //Holds sample as key and fileTypes to be displayed as the value
          if (rs.request.session.get("viewFilesSamples").isDefined && (filesInRelease.exists(_.equals(rs.request.session.get("viewFilesSamples").get)))) {
-            samplesFromTSVFiles = getSamplesFromFile(rs.request.session.get("viewFilesSamples").get, completenessOfSamples)(rs.dbSession)
+            samplesFromTSVFiles = getSamplesFromFile(rs.request.session.get("viewFilesSamples").get, releaseName, completenessOfSamples)(rs.dbSession)
          } else {
-            samplesFromTSVFiles = getSamplesFromAllFiles(filesInRelease, completenessOfSamples)(rs.dbSession)
+            samplesFromTSVFiles = getSamplesFromAllFiles(filesInRelease, releaseName, completenessOfSamples)(rs.dbSession)
          }
 
          var sampleFilesFromTSVFiles: Map[Sample, List[SampleFile]] = Map()
-         for (sample <- samplesFromTSVFiles) {
+         for (sample <- samplesFromTSVFiles.keys) {
             var sampleFileIds = SampleSampleFileLinkDAO.getFileIdsFromSampleName(sample.name)(rs.dbSession)
             var sampleFiles: ListBuffer[SampleFile] = new ListBuffer()
-
+            var validFileTypes = samplesFromTSVFiles.get(sample).get
+            
             for (sampleFileId <- sampleFileIds) {
-               sampleFiles += SampleFileDAO.getSampleFileFromId(sampleFileId)(rs.dbSession)
+               var sampleFileType = SampleFileDAO.getFileTypeFromId(sampleFileId)(rs.dbSession)
+               if(isValidFileType(validFileTypes, sampleFileType)){
+                  sampleFiles += SampleFileDAO.getSampleFileFromId(sampleFileId)(rs.dbSession)
+               }
             }
 
             sampleFilesFromTSVFiles += (sample -> sampleFiles.toList)
@@ -83,25 +87,52 @@ object EgaReleaseSamples extends Controller {
          success => Redirect(routes.EgaReleaseSamples.viewEgaReleaseSamples).withSession(request.session + ("viewFilesSamples" -> success)))
    }
 
-   def getSamplesFromAllFiles(filenames: List[String], completenessType: String) = { implicit session: play.api.db.slick.Session =>
-      var returnList: List[Sample] = List()
+   def getSamplesFromAllFiles(filenames: List[String], releaseName: String, completenessType: String) = { implicit session: play.api.db.slick.Session =>
+      var returnMap: Map[Sample, List[String]] = Map()
       for (filename <- filenames) {
-         returnList = returnList ::: getSamplesFromFile(filename, completenessType)(session)
+         var tempMap = getSamplesFromFile(filename, releaseName, completenessType)(session)
+         for(sample <- tempMap.keys){
+            if(returnMap.contains(sample)){
+               var oldFileTypes = returnMap.get(sample).get
+               returnMap -= sample
+               var newFileTypes: ListBuffer[String] = new ListBuffer()
+               newFileTypes ++= oldFileTypes
+               for(fileType <- tempMap.get(sample).get){
+                  if(!newFileTypes.contains(fileType)){
+                     newFileTypes += fileType
+                  }
+               }
+               returnMap += (sample -> newFileTypes.toList)
+            } else {
+               returnMap += (sample -> tempMap.get(sample).get)
+            }
+         }   
       }
-      returnList.distinct
+      returnMap
    }
 
-   def getSamplesFromFile(filename: String, completenessType: String) = { implicit session: play.api.db.slick.Session =>
-      var returnList: List[Sample] = List()
-      var samplesFromFile: List[Sample] = TSVFileSampleLinkDAO.getAllSamplesInTSVFile(filename)(session)
+   def getSamplesFromFile(fileName: String, releaseName: String, completenessType: String) = { implicit session: play.api.db.slick.Session =>
+      var returnMap: Map[Sample, List[String]] = Map()
+      var samplesFromFile: List[Sample] = TSVFileSampleLinkDAO.getAllSamplesInTSVFile(fileName, releaseName)(session)
+      var validFileType = TSVFileDAO.getFileTypeFromFileNameAndReleaseName(fileName, releaseName)(session)
       for (sample <- samplesFromFile) {
          if ((completenessType.equals("all") || completenessType.equals("incomplete")) && !sample.complete) {
-            returnList = returnList ::: List(sample)
+            returnMap += (sample -> List(validFileType))
          }
          if ((completenessType.equals("all") || completenessType.equals("complete")) && sample.complete) {
-            returnList = returnList ::: List(sample)
+            returnMap += (sample -> List(validFileType))
          }
       }
-      returnList
+      returnMap
+   }
+   
+   def isValidFileType(validFileTypes: List[String], fileType: String): Boolean = {
+      var valid = false
+      for(validFileType <- validFileTypes){
+         if(validFileType.equals("all") || validFileType.equals(fileType)){
+            valid = true
+         }
+      }
+      valid
    }
 }

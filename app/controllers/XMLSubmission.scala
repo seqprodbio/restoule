@@ -55,7 +55,7 @@ object XMLSubmission extends Controller {
    def getArrayOfGeneratedXMLS(releaseName: String, fileName: String) = { implicit dbSession: play.api.db.slick.Session =>
       var xmlNames = new ArrayBuffer[String]()
       if (!fileName.equals("all")) {
-         for (sample <- TSVFileSampleLinkDAO.getAllSamplesInTSVFile(fileName)(dbSession)) {
+         for (sample <- TSVFileSampleLinkDAO.getAllSamplesInTSVFile(fileName, releaseName)(dbSession)) {
             xmlNames += sample.name + ".xml"
          }
       } else {
@@ -63,7 +63,7 @@ object XMLSubmission extends Controller {
          var fileIds = ReleaseTSVFileLinkDAO.getFileIdsFromReleaseId(releaseId)(dbSession)
          for (fileId <- fileIds) {
             var tempFileName = TSVFileDAO.getFileNameFromId(fileId)(dbSession)
-            for (sample <- TSVFileSampleLinkDAO.getAllSamplesInTSVFile(tempFileName)(dbSession)) {
+            for (sample <- TSVFileSampleLinkDAO.getAllSamplesInTSVFile(tempFileName, releaseName)(dbSession)) {
                xmlNames += sample.name + ".xml"
             }
          }
@@ -73,7 +73,7 @@ object XMLSubmission extends Controller {
 
    def areAllSamplesComplete(releaseName: String) = { implicit session: play.api.db.slick.Session =>
       var returnValue = true
-      for (sample <- EgaReleaseSamples.getSamplesFromAllFiles(TSVFileDAO.getTSVFileNamesFromReleaseName(releaseName)(session), "all")(session)) {
+      for (sample <- EgaReleaseSamples.getSamplesFromAllFiles(TSVFileDAO.getTSVFileNamesFromReleaseName(releaseName)(session), releaseName, "all")(session).keys) {
          if (!sample.complete) {
             returnValue = false
          }

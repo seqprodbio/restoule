@@ -1,4 +1,4 @@
-@(header : Option[List[String]] = None, content : Option[List[List[String]]] = None, isHeaderPreselected : Array[Boolean] = new Array[Boolean](0), displayErrorMessages: Boolean = true)(implicit session : Session)
+@(header : Option[List[String]] = None, content : Option[List[List[String]]] = None, isHeaderPreselected : Array[Boolean] = new Array[Boolean](0), displayErrorMessages: Boolean = true, sampleTypesForFile: Option[String] = None)(implicit session : Session)
 <!--I added a displayErrorMessages field since sessions do not update until the next request-response transaction which means sometimes 
 false error messages are displayed-->
 
@@ -43,6 +43,24 @@ false error messages are displayed-->
                 }
                 <form action="@routes.SampleSelection.upload" method="POST" enctype="multipart/form-data">
                     <input type="file" name="tsvFile">
+                    <label for="sampleTypes">Sample Types:</label>
+                    <select name="sampleTypes">
+                    	@if(!sampleTypesForFile.isDefined || sampleTypesForFile.get.equals("all")){
+                        	<option value="all" selected>all</option>
+                            <option value=".fastq.gz">.fastq.gz</option>
+                            <option value=".bam">.bam</option>
+                        } else {
+                        	@if(sampleTypesForFile.get.equals(".fastq.gz")){
+                        		<option value="all">all</option>
+                            	<option value=".fastq.gz" selected>.fastq.gz</option>
+                            	<option value=".bam">.bam</option>
+                            } else {
+                            	<option value="all">all</option>
+                                <option value=".fastq.gz">.fastq.gz</option>
+                                <option value=".bam" selected>.bam</option>
+                            }
+                        }
+                    </select>
                     <p>
                         <button type="submit">Upload</button>
                     </p>
@@ -52,8 +70,8 @@ false error messages are displayed-->
         @if(header.isDefined){
             <br><br>
             <div style="border:solid;margin-left:10px;">
-                <h3>&nbsp Pick Columns</h3>
                 <form action="@routes.SampleSelection.processForm" method="POST">
+                    <h3>&nbsp Pick Columns</h3>
                     <div style="margin-left:15px;text-align:center;overflow-x:scroll;">
                         <table>
                             <tr>

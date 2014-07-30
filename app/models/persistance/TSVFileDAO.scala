@@ -31,40 +31,64 @@ object TSVFileDAO {
 
    def tsvFileExistsInRelease(releaseName: String, tsvFileName: String) = { implicit session: Session =>
       val releaseId = ReleaseDAO.getReleaseIdFromName(releaseName)(session)
-      if (getTSVIdFromFileName(tsvFileName)(session).isDefined) {
-         ReleaseTSVFileLinkDAO.tsvFileExistsInRelease(releaseId, getTSVIdFromFileName(tsvFileName)(session).get)(session)
+      if (getTSVIdFromFileNameAndReleaseName(tsvFileName, releaseName)(session).isDefined) {
+         ReleaseTSVFileLinkDAO.tsvFileExistsInRelease(releaseId, getTSVIdFromFileNameAndReleaseName(tsvFileName, releaseName)(session).get)(session)
       } else {
          false
       }
    }
 
-   def createTSVFile(releaseName: String, fileName: String, path: String) = { implicit session: Session =>
+   def createTSVFile(releaseName: String, fileName: String, path: String, fileType: String) = { implicit session: Session =>
       val releaseId = ReleaseDAO.getReleaseIdFromName(releaseName)(session)
-      val newTSVFile = new TSVFile(None, fileName, path, new java.sql.Timestamp(System.currentTimeMillis()))
+      val newTSVFile = new TSVFile(None, fileName, path, fileType, new java.sql.Timestamp(System.currentTimeMillis()))
       tsvFiles.insert(newTSVFile)
-      ReleaseTSVFileLinkDAO.createLink(releaseId, getTSVIdFromFileName(fileName)(session).get)(session)
+      ReleaseTSVFileLinkDAO.createLink(releaseId, getTSVIdFromFileNameAndSampleFileTypes(fileName, fileType)(session).get)(session)
    }
 
-   def addTSVFileToRelease(releaseName: String, fileName: String) = { implicit session: Session =>
+   def addTSVFileToRelease(releaseName: String, fileName: String, fileType: String) = { implicit session: Session =>
       val releaseId = ReleaseDAO.getReleaseIdFromName(releaseName)(session)
-      val tsvFileId = getTSVIdFromFileName(fileName)(session).get
+      val tsvFileId = getTSVIdFromFileNameAndSampleFileTypes(fileName, fileType)(session).get
       ReleaseTSVFileLinkDAO.createLink(releaseId, tsvFileId)(session)
    }
 
-   def getTSVIdFromFileName(fileName: String) = { implicit session: Session =>
-      tsvFiles.filter(t => t.name === fileName).map(t => t.id).firstOption
+   def getTSVIdFromFileNameAndReleaseName(fileName: String, releaseName: String) = { implicit session: Session =>
+      val releaseId = ReleaseDAO.getReleaseIdFromName(releaseName)(session)
+      val files = ReleaseTSVFileLinkDAO.getFilesFromReleaseId(releaseId)(session)
+      var id: Option[Int] = None
+      for(file <- files){
+        if(file.name.equals(fileName)){
+          id = file.id
+        }
+      }
+      id
+   }
+   
+   def getTSVIdFromFileNameAndSampleFileTypes(fileName: String, sampleFileType: String) = { implicit session: Session =>
+      tsvFiles.filter(t => t.name === fileName && t.fileType === sampleFileType).map(t => t.id).firstOption
+   }
+   
+   def getFileTypeFromFileNameAndReleaseName(fileName: String, releaseName: String) = { implicit session: Session =>
+      var tsvId = getTSVIdFromFileNameAndReleaseName(fileName, releaseName)(session)
+      tsvFiles.filter(t => t.id === tsvId).map(t => t.fileType).first
    }
 
    def getFileNameFromId(fileId: Int) = { implicit session: Session =>
       tsvFiles.filter(t => t.id === fileId).map(t => t.name).first
    }
 
-   def tsvFileExists(fileName: String) = { implicit session: Session =>
-      if (getTSVIdFromFileName(fileName)(session).isDefined) {
+   def tsvFileExists(fileName: String, fileTypes: String) = { implicit session: Session =>
+      if (getTSVIdFromFileNameAndSampleFileTypes(fileName, fileTypes)(session).isDefined) {
          true
       } else {
          false
       }
+   }
+   
+   def updateFileTypeFromId(fileId: Int, fileType: String) = { implicit session: Session =>
+     val fileTypeQuery = for{ t <- tsvFiles if t.id === fileId} yield t.fileType
+     fileTypeQuery.update(fileType)
+     val fileTypeUpdateStatement = fileTypeQuery.updateStatement
+     val fileTypeUpdateInvoker = fileTypeQuery.updateInvoker
    }
 
 }

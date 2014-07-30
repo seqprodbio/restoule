@@ -9,7 +9,7 @@ object SampleSampleFileLinkDAO {
 
    def sampleSampleFileLinks = TableQuery[SampleSampleFileLinkTable]
 
-   def doesLinkExist(sampleName: String, sampleFileName: String) = { implicit session: Session =>
+   def linkExists(sampleName: String, sampleFileName: String) = { implicit session: Session =>
       val sampleId = SampleDAO.getIdFromSampleName(sampleName)(session)
       val sampleFileId = SampleFileDAO.getIdFromSampleFileName(sampleFileName)(session)
       if (sampleSampleFileLinks.filter(s => s.sampleId === sampleId && s.sampleFileId === sampleFileId).firstOption.isDefined) {

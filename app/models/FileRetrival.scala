@@ -43,6 +43,7 @@ object FileRetrival {
    def getFilePathsFromRoot(fileObj: FileObject): ListBuffer[String] = {
       val filePaths = new ListBuffer[String]()
 
+      println(fileObj.getName().getPath())
       if (fileObj.getType() == FileType.FOLDER) {
          var children = fileObj.getChildren()
          for (child: FileObject <- children) {

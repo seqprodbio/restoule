@@ -17,6 +17,7 @@ import scala.io.Source
 import scala.util.matching.Regex
 import scala.collection.mutable.ArrayBuffer
 import models.persistance.SampleSampleFileLinkDAO
+import models.persistance.ReleaseTSVFileLinkDAO
 
 object SampleSelection extends Controller {
 
@@ -77,6 +78,25 @@ object SampleSelection extends Controller {
       }.getOrElse {
          errorMessage = "Please select a file to upload"
       }
+      var fileType = ""
+      sampleTypeSelectionForm.bindFromRequest.fold(
+    	  formWithErrors =>{
+    	     errorMessage = "Error with file type selection. Please try again"
+    	     println(formWithErrors)
+    	  },
+    	  success => {
+    	    println(success)
+    	    fileType = success
+    	    if (fileType.charAt(0).equals('.')) {
+    	    	fileType = fileType.substring(1)
+    	    }
+    	  }
+      )
+      
+      if(TSVFileDAO.tsvFileExistsInRelease(rs.request.session.get("releaseName").get, fileName)(rs.dbSession)){
+         errorMessage = "File already exists in release!"
+      }
+      
       if (errorMessage.equals("")) {
          var tsvFile = Source.fromFile(filePath)
          var linesFromFile = tsvFile.getLines
@@ -87,14 +107,16 @@ object SampleSelection extends Controller {
          for (headerName <- tsvHeader.get) {
             isColumnNameInSettingsArray.+=(PreferredHeaderDAO.isPreferredHeaderNameForUser(headerName, rs.request.session.get("username").get)(rs.dbSession))
          }
+         
          val releaseName = rs.request.session.get("releaseName").get
-         if (TSVFileDAO.tsvFileExists(fileName)(rs.dbSession)) {
+         if (TSVFileDAO.tsvFileExists(fileName, fileType)(rs.dbSession)) {
             if (!TSVFileDAO.tsvFileExistsInRelease(releaseName, fileName)(rs.dbSession)) {
-               TSVFileDAO.addTSVFileToRelease(releaseName, fileName)(rs.dbSession)
+               TSVFileDAO.addTSVFileToRelease(releaseName, fileName, fileType)(rs.dbSession)
             }
          } else {
-            TSVFileDAO.createTSVFile(releaseName, fileName, filePath)(rs.dbSession)
+            TSVFileDAO.createTSVFile(releaseName, fileName, filePath, fileType)(rs.dbSession)
          }
+         
          if (rs.request.session.get("uploadErrorMessage").isDefined) {
             Ok(views.html.sampleSelection(tsvHeader, tsvContent, isColumnNameInSettingsArray.toArray, false)).withSession(rs.request.session - "uploadErrorMessage" + ("tsvFileName" -> fileName))
          } else {
@@ -111,7 +133,8 @@ object SampleSelection extends Controller {
             println(formWithErrors)
             Ok("Form has errors")
          },
-         success => {
+         success => {        	
+            var releaseName = rs.request.session.get("releaseName").get
             var trueIndices = getTrueIndices(success)
             if (trueIndices.size > 0 && rs.request.session.get("tsvFileName").isDefined) {
                val tsvFileName = rs.request.session.get("tsvFileName").get
@@ -131,15 +154,15 @@ object SampleSelection extends Controller {
                }
 
                for (sampleName <- sampleNames) {
-                  if (!SampleDAO.sampleExistsInFile(tsvFileName, sampleName)(rs.dbSession)) {
+                  if (!SampleDAO.sampleExistsInFile(tsvFileName, releaseName, sampleName)(rs.dbSession)) {
                      if (SampleDAO.sampleExists(sampleName)(rs.dbSession)) {
-                        TSVFileSampleLinkDAO.createTSVFileSampleLink(tsvFileName, sampleName)(rs.dbSession)
+                        TSVFileSampleLinkDAO.createTSVFileSampleLink(tsvFileName, releaseName, sampleName)(rs.dbSession)
                      } else {
-                        SampleDAO.createSample(tsvFileName, sampleName)(rs.dbSession)
+                        SampleDAO.createSample(tsvFileName, releaseName, sampleName)(rs.dbSession)
                      }
                   }
                   for (sampleFileName <- SampleFileDAO.getAllSampleFileNames()(rs.dbSession)) {
-                     if (sampleFileName.indexOf(sampleName) != -1) {
+                     if (sampleFileName.indexOf(sampleName) != -1 && !SampleSampleFileLinkDAO.linkExists(sampleName, sampleFileName)(rs.dbSession)) {
                         SampleSampleFileLinkDAO.createLink(sampleName, sampleFileName)(rs.dbSession)
                      }
                   }
@@ -199,5 +222,7 @@ object SampleSelection extends Controller {
       return true
    }
 
+   val sampleTypeSelectionForm = Form("sampleTypes" -> text)
+   
    val headerSelectionForm = Form("value" -> list(boolean))
 }

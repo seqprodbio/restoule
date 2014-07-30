@@ -10,8 +10,8 @@ object TSVFileSampleLinkDAO {
 
    val tsvFileSampleLinks = TableQuery[TSVFileSampleLinkTable]
 
-   def getAllSamplesInTSVFile(tsvFileName: String) = { implicit session: Session =>
-      val tsvId = TSVFileDAO.getTSVIdFromFileName(tsvFileName)(session).get
+   def getAllSamplesInTSVFile(tsvFileName: String, releaseName: String) = { implicit session: Session =>
+      val tsvId = TSVFileDAO.getTSVIdFromFileNameAndReleaseName(tsvFileName, releaseName)(session).get
       val sampleIds = tsvFileSampleLinks.filter(l => l.tsvFileId === tsvId).map(l => l.sampleId).list
       var samplesList = new ListBuffer[Sample]()
       for (sampleId <- sampleIds) {
@@ -28,8 +28,8 @@ object TSVFileSampleLinkDAO {
       }
    }
 
-   def createTSVFileSampleLink(tsvFileName: String, sampleName: String) = { implicit session: Session =>
-      val tsvId = TSVFileDAO.getTSVIdFromFileName(tsvFileName)(session).get
+   def createTSVFileSampleLink(tsvFileName: String, releaseName: String, sampleName: String) = { implicit session: Session =>
+      val tsvId = TSVFileDAO.getTSVIdFromFileNameAndReleaseName(tsvFileName, releaseName)(session).get
       val sampleId = SampleDAO.getIdFromSampleName(sampleName)(session)
       tsvFileSampleLinks.insert(new TSVFileSampleLink(None, tsvId, sampleId, new java.sql.Timestamp(System.currentTimeMillis())))
    }

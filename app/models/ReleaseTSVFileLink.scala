@@ -16,5 +16,5 @@ class ReleaseTSVFileLinkTable(tag: Tag) extends Table[ReleaseTSVFileLink](tag, "
    def * = (id.?, releaseId, tsvFileId, created) <> (ReleaseTSVFileLink.tupled, ReleaseTSVFileLink.unapply)
 
    def release = foreignKey("RELEASE_FK", releaseId, releases)(_.id)
-   def tsvFile = foreignKey("TSVFILE_FK", tsvFileId, tsvFiles)(_.id)
+   def tsvFile = foreignKey("TSV_FILE_FK", tsvFileId, tsvFiles)(_.id)
 }

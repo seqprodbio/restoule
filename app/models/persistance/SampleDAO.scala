@@ -13,10 +13,10 @@ object SampleDAO {
       samples.filter(s => s.id === id).first
    }
 
-   def createSample(tsvFileName: String, name: String) = { implicit session: Session =>
+   def createSample(tsvFileName: String, releaseName: String, name: String) = { implicit session: Session =>
       val newSample = new Sample(None, name, false, new java.sql.Timestamp(System.currentTimeMillis()))
       samples.insert(newSample)
-      TSVFileSampleLinkDAO.createTSVFileSampleLink(tsvFileName, name)(session)
+      TSVFileSampleLinkDAO.createTSVFileSampleLink(tsvFileName, releaseName, name)(session)
    }
 
    def getSampleFromSampleName(sampleName: String) = { implicit session: Session =>
@@ -39,8 +39,8 @@ object SampleDAO {
       }
    }
 
-   def sampleExistsInFile(fileName: String, sampleName: String) = { implicit session: Session =>
-      val fileId = TSVFileDAO.getTSVIdFromFileName(fileName)(session).get
+   def sampleExistsInFile(fileName: String, releaseName: String, sampleName: String) = { implicit session: Session =>
+      val fileId = TSVFileDAO.getTSVIdFromFileNameAndReleaseName(fileName, releaseName)(session).get
       if (samples.filter(s => s.name === sampleName).firstOption.isDefined) {
          if (TSVFileSampleLinkDAO.sampleExistsInFile(fileId, getIdFromSampleName(sampleName)(session))(session)) {
             true
