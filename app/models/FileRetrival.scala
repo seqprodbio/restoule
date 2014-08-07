@@ -6,6 +6,7 @@ import scala.collection.mutable.ListBuffer
 import org.apache.commons.vfs2._
 import org.apache.commons.vfs2.auth.StaticUserAuthenticator
 import org.apache.commons.vfs2.impl.DefaultFileSystemConfigBuilder
+import org.apache.commons.vfs2.provider.ftp.FtpFileSystemConfigBuilder;
 
 object FileRetrival {
 
@@ -15,6 +16,7 @@ object FileRetrival {
          val authenticator: StaticUserAuthenticator = new StaticUserAuthenticator(ftpSite, userName, password)
          val opts: FileSystemOptions = new FileSystemOptions()
          DefaultFileSystemConfigBuilder.getInstance().setUserAuthenticator(opts, authenticator)
+         FtpFileSystemConfigBuilder.getInstance().setDataTimeout(opts, new Integer(600));
          var fileObj = VFS.getManager().resolveFile("ftp://" + ftpSite, opts)
          filePaths = getFilePathsFromRoot(fileObj)
          return filePaths.toList
@@ -42,15 +44,25 @@ object FileRetrival {
 
    def getFilePathsFromRoot(fileObj: FileObject): ListBuffer[String] = {
       val filePaths = new ListBuffer[String]()
-
-      println(fileObj.getName().getPath())
-      if (fileObj.getType() == FileType.FOLDER) {
-         var children = fileObj.getChildren()
-         for (child: FileObject <- children) {
-            filePaths.appendAll(getFilePathsFromRoot(child))
+      var successful = false
+      while (!successful) {
+         successful = true
+         try {
+            println(fileObj.getName().getPath())
+            if (fileObj.getType() == FileType.FOLDER) {
+               var children = fileObj.getChildren()
+               for (child: FileObject <- children) {
+                  filePaths.appendAll(getFilePathsFromRoot(child))
+               }
+            } else {
+               filePaths += fileObj.getName().getPath()
+            }
+         } catch {
+            case ex: FileSystemException => {
+               println("Timed out when attempting to get children of " + fileObj.getName().getPath())
+               successful = false
+            }
          }
-      } else {
-         filePaths += fileObj.getName().getPath()
       }
       return filePaths
    }

@@ -6,6 +6,7 @@ import models.SampleFileTable
 import play.api.db.slick.Config.driver.simple._
 
 import scala.util.matching.Regex
+import scala.collection.mutable.Map
 import scala.collection.immutable.StringOps
 
 object SampleFileDAO {
@@ -50,7 +51,7 @@ object SampleFileDAO {
       regex.findFirstMatchIn(fileName).get.group(2)
    }
 
-   def createSampleFile(path: String, origin: String) = { implicit session: Session =>
+   def createSampleFile(path: String, sampleLimsInfoId: Int, origin: String) = { implicit session: Session =>
       var pathParts = path.split("/")
       var fileName = pathParts(pathParts.length - 1)
       var fileNameParts = fileName.split("\\.")
@@ -136,7 +137,7 @@ object SampleFileDAO {
             var laneString = dataMatch.group(matchNumber).substring(1) //The substring is there to take out the  _
             if (laneString.charAt(0).equals('L')) {
                try {
-                  lane = laneString.toInt
+                  lane = laneString.substring(1).toInt
                } catch {
                   case e: Exception => lane = 0
                }
@@ -160,10 +161,47 @@ object SampleFileDAO {
                case e: Exception => read = 0
             }
          }
-
       }
-      var newSampleFile = new SampleFile(None, fileName, path, origin, swid, sample, library, sequencerRunName, lane, barcode, read, new java.sql.Timestamp(System.currentTimeMillis()))
+      var sampleLimsInfoIdOption: Option[Int] = None
+      if (sampleLimsInfoId != 0) {
+         sampleLimsInfoIdOption = Some(sampleLimsInfoId)
+      }
+      var newSampleFile = new SampleFile(None, sampleLimsInfoIdOption, fileName, path, origin, swid, sample, library, sequencerRunName, lane, barcode, read, new java.sql.Timestamp(System.currentTimeMillis()))
       sampleFiles.insert(newSampleFile)
+   }
+
+   def getLibraryFromName(name: String): String = {
+      var library = ""
+      val swidRegexString = "(SWID_[0-9]{4,6}_)"
+      val sampleRegexString = "([A-Z]{3,5})_([0-9]{3,4}|[0-9][CR][0-9]{1,2})_(nn|[A-Z]{1}[a-z]{1})_([nRPXMCFE])"
+      val libraryRegexString = sampleRegexString + "_(SE|PE|MP)_(nn|[0-9]{2,4}|[0-9]K)_(TS|EX|CH|BS|WG|TR|WT|SM|MR)"
+      val sequencerRunNameRegexString = "(_NoIndex|_[0-9]*_[a-zA-Z0-9]*_[0-9]*[A-Z]*_[a-zA-Z0-9-]*_?([A-Z]{2,})?)"
+      val sequencerRunNameWithNumberRegexString = "(_NoIndex|_[0-9]*_[a-zA-Z0-9]*_[A-Z0-9]*_[a-zA-Z0-9-]*_?([A-Z]{2,})?(_[0-9])?)"
+      val laneRegexString = "(_[0-9]|_L[0-9]{3})"
+      val readRegexString = "(_R[0-9])"
+      val barcodeRegexString = "(_NoIndex|_[ACTG]{6,10})"
+
+      val finalRegexString = "^" + swidRegexString + "?" + libraryRegexString + "(" + sequencerRunNameWithNumberRegexString + "(" + barcodeRegexString + "|_sd-seq|_mm)" + laneRegexString + "|" + sequencerRunNameRegexString + laneRegexString + barcodeRegexString + "?|" + barcodeRegexString + laneRegexString + sequencerRunNameWithNumberRegexString + ")" + readRegexString + "?(_[0-9]{3})?$"
+
+      var regex = finalRegexString.r
+      if (regex.findFirstMatchIn(name).isDefined) {
+         var dataMatch = regex.findFirstMatchIn(name).get
+         if (dataMatch.group(2) != null && dataMatch.group(3) != null && dataMatch.group(4) != null && dataMatch.group(5) != null && dataMatch.group(6) != null && dataMatch.group(7) != null && dataMatch.group(8) != null) {
+            library = dataMatch.group(2) + "_" + dataMatch.group(3) + "_" + dataMatch.group(4) + "_" + dataMatch.group(5) + "_" + dataMatch.group(6) + "_" + dataMatch.group(7) + "_" + dataMatch.group(8)
+         } else {
+            println("One of the following is apparently null: ")
+            println("2: " + dataMatch.group(2))
+            println("3: " + dataMatch.group(3))
+            println("4: " + dataMatch.group(4))
+            println("5: " + dataMatch.group(5))
+            println("6: " + dataMatch.group(6))
+            println("7: " + dataMatch.group(7))
+            println("8: " + dataMatch.group(8))
+         }
+      } else {
+         println("Regex didn't match filename: " + name)
+      }
+      return library
    }
 
    def deleteAll() = { implicit session: Session =>

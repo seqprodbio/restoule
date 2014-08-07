@@ -12,5 +12,6 @@ libraryDependencies ++= Seq(
   "com.typesafe.play" %% "play-slick" % "0.7.0-M1",
   "org.postgresql" % "postgresql" % "9.2-1002-jdbc4",
   "org.apache.commons" % "commons-vfs2" % "2.0",
-  "commons-net" % "commons-net" % "2.2"
+  "commons-net" % "commons-net" % "2.2",
+  "org.json" % "json" % "20140107"
 )

@@ -5,19 +5,22 @@ import play.api.mvc._
 import play.api.db.slick._
 import play.api.data.{ Form }
 import play.api.data.Forms._
+import scala.collection.mutable.Buffer
 import scala.collection.mutable.HashSet
 import scala.collection.mutable.ListBuffer
 import scala.collection.immutable.List
 import models.SampleFile
 import models.SampleFileInfo
 import models.FileRetrival
+import models.LIMSRetrieval
+import models.persistance.SampleDAO
 import models.persistance.SampleFileDAO
-import models.FileRetrival
+import models.persistance.SampleLIMSInfoDAO
 import models.persistance.LocalDirectoryDAO
 import models.persistance.FTPCredentialsDAO
-import scala.collection.mutable.Buffer
 import models.persistance.SampleSampleFileLinkDAO
-import models.persistance.SampleDAO
+
+import org.json._
 
 object ViewFiles extends Controller {
 
@@ -104,14 +107,34 @@ object ViewFiles extends Controller {
 
    def updateFiles() = DBAction { implicit res =>
       loading = true
-      SampleFileDAO.deleteAll()(res.dbSession)
       SampleSampleFileLinkDAO.deleteAll()(res.dbSession)
+      SampleFileDAO.deleteAll()(res.dbSession)
+      val samplesString = LIMSRetrieval.getSamplesString();
+      println("Got sample string from LIMS!")
       for (ftpCredentials <- FTPCredentialsDAO.getAllFTPCredentials()(res.dbSession)) {
          var ftpFilePaths = FileRetrival.getFilePathsFromFTP(ftpCredentials.ftpSite, ftpCredentials.userName, ftpCredentials.password)
          for (ftpFilePath <- ftpFilePaths) {
             var pathParts = ftpFilePath.split("/")
             var fileName = pathParts(pathParts.length - 1)
-            SampleFileDAO.createSampleFile(ftpFilePath, "ftp")(res.dbSession)
+            var fileNameParts = fileName.split("\\.")
+            var fileNameWithoutExtension = fileNameParts(0)
+            var libraryName = SampleFileDAO.getLibraryFromName(fileNameWithoutExtension)
+            var sampleLimsInfoId = 0
+
+            if (!SampleLIMSInfoDAO.getSampleLimsInfoByLibraryName(libraryName)(res.dbSession).isDefined) {
+               var startSample: JSONObject = LIMSRetrieval.getStartSample(samplesString, SampleFileDAO.getLibraryFromName(fileNameWithoutExtension))
+               var donorName = LIMSRetrieval.getDonor(samplesString, startSample)
+               var libraryMap = LIMSRetrieval.getLibraryInfo(samplesString, startSample) //LibraryMap will either be empty or have all the necessary fields
+               if (!libraryMap.isEmpty && donorName != "") {
+                  SampleLIMSInfoDAO.createSampleLimsInfo(libraryMap.get("Library Name").get, donorName, libraryMap.get("Library Strategy").get, libraryMap.get("Library Source").get, libraryMap.get("Library Selection Process").get)(res.dbSession)
+                  sampleLimsInfoId = SampleLIMSInfoDAO.getSampleLimsInfoByLibraryName(libraryName)(res.dbSession).get.id.get
+               }
+               //Note: If the libraryMap is empty, we let the sampleLimsInfoId be 0
+               //This is because if we just make a link to the defaults, we may have an issue with the donor not existing(since the donor for each sample file linked to it would be different so we cannot make a single donor)
+            } else {
+               sampleLimsInfoId = SampleLIMSInfoDAO.getSampleLimsInfoByLibraryName(libraryName)(res.dbSession).get.id.get
+            }
+            SampleFileDAO.createSampleFile(ftpFilePath, sampleLimsInfoId, "ftp")(res.dbSession)
             for (sampleName <- SampleDAO.getAllSampleNames()(res.dbSession)) {
                if (fileName.indexOf(sampleName) != -1) {
                   SampleSampleFileLinkDAO.createLink(sampleName, fileName)(res.dbSession)
@@ -125,7 +148,26 @@ object ViewFiles extends Controller {
          for (localFilePath <- localFilePaths) {
             var pathParts = localFilePath.split("/")
             var fileName = pathParts(pathParts.length - 1)
-            SampleFileDAO.createSampleFile(localFilePath, "local")(res.dbSession)
+            var fileNameParts = fileName.split("\\.")
+            var fileNameWithoutExtension = fileNameParts(0)
+            var libraryName = SampleFileDAO.getLibraryFromName(fileNameWithoutExtension)
+            var sampleLimsInfoId = 0
+
+            if (!SampleLIMSInfoDAO.getSampleLimsInfoByLibraryName(libraryName)(res.dbSession).isDefined) {
+               var startSample: JSONObject = LIMSRetrieval.getStartSample(samplesString, SampleFileDAO.getLibraryFromName(fileName))
+               var donorName = LIMSRetrieval.getDonor(samplesString, startSample)
+               var libraryMap = LIMSRetrieval.getLibraryInfo(samplesString, startSample)
+               if (!libraryMap.isEmpty && donorName != "") {
+                  SampleLIMSInfoDAO.createSampleLimsInfo(libraryMap.get("Library Name").get, donorName, libraryMap.get("Library Strategy").get, libraryMap.get("Library Source").get, libraryMap.get("Library Selection Process").get)(res.dbSession)
+                  sampleLimsInfoId = SampleLIMSInfoDAO.getSampleLimsInfoByLibraryName(libraryName)(res.dbSession).get.id.get
+               }
+               //Note: If the libraryMap is empty, we let the sampleLimsInfoId be 0
+               //This is because if we just make a link to the defaults, we may have an issue with the donor not existing(since the donor for each sample file linked to it would be different so we cannot make a single donor)
+            } else {
+               sampleLimsInfoId = SampleLIMSInfoDAO.getSampleLimsInfoByLibraryName(libraryName)(res.dbSession).get.id.get
+            }
+
+            SampleFileDAO.createSampleFile(localFilePath, sampleLimsInfoId, "local")(res.dbSession)
             for (sampleName <- SampleDAO.getAllSampleNames()(res.dbSession)) {
                if (fileName.indexOf(sampleName) != -1) {
                   SampleSampleFileLinkDAO.createLink(sampleName, fileName)(res.dbSession)
@@ -144,7 +186,7 @@ object ViewFiles extends Controller {
          var addedFileExtension = "" //This holds the .gpg, .md5, and .gpg.md5 part of the file extension
          var fileName = ""
          var originalFileExtension = "" //This holds the .bam or the .fastq.gz part of the file extension
-         
+
          val fileExtensionRegex = "^(.+?)\\.(bam|fastq\\.gz)\\.(gpg\\.md5|gpg|md5)$".r
          val matchOption = fileExtensionRegex.findFirstMatchIn(sampleFile.fileName)
          if (matchOption.isDefined) {
