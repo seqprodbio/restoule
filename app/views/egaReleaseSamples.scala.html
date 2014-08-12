@@ -10,6 +10,14 @@
     }
 }
 
+@localOrFTP(origin: String) = {
+    @if(origin.equals("local")){
+        local
+    } else {
+        ftp
+    }
+}
+
 <!DOCTYPE html>
 <html> 
     <head>
@@ -233,7 +241,7 @@
                             }
                                 <td class="@getSampleFileContentCellClass(sampleFile)">&nbsp@(sample.name)&nbsp</td>
                                 <td class="@getSampleFileContentCellClass(sampleFile)">&nbsp@(sampleFile.fileName)&nbsp</td>
-                                <td class="@getSampleFileContentCellClass(sampleFile)">&nbsp@(sampleFile.origin)&nbsp</td>
+                                <td class="@getSampleFileContentCellClass(sampleFile)">@localOrFTP(sampleFile.origin)</td>
                                 <td class="@getSampleFileContentCellClass(sampleFile)">&nbsp@(sampleFile.sequencerRunName)&nbsp</td>
                                 <td class="@getSampleFileContentCellClass(sampleFile)">&nbsp@(SampleFileDAO.getSequencerRunDateString(sampleFile.id.get)(dbSession))&nbsp</td>
                                 <td class="@getSampleFileContentCellClass(sampleFile)">&nbsp@(SampleFileDAO.getDonor(sampleFile.id.get)(dbSession))&nbsp</td>

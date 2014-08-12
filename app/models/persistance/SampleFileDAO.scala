@@ -59,7 +59,7 @@ object SampleFileDAO {
    }
 
    def getAllFTPSampleFiles() = { implicit session: Session =>
-      sampleFiles.filter(s => s.origin === "ftp").list
+      sampleFiles.filter(s => !s.origin.equals("local")).list
    }
 
    def getAllLocalSampleFiles() = { implicit session: Session =>
@@ -86,6 +86,12 @@ object SampleFileDAO {
       var fileName = sampleFiles.filter(s => s.id === id).map(s => s.fileName).first
       val regex = "^(.+?)\\.(bam|fastq\\.gz)\\.(gpg\\.md5|gpg|md5)$".r
       regex.findFirstMatchIn(fileName).get.group(2)
+   }
+
+   def getAddedFileTypeFromId(id: Int) = { implicit session: Session =>
+      var fileName = sampleFiles.filter(s => s.id === id).map(s => s.fileName).first
+      val regex = "^(.+?)\\.(bam|fastq\\.gz)\\.(gpg\\.md5|gpg|md5)$".r
+      regex.findFirstMatchIn(fileName).get.group(3)
    }
 
    def getDonor(id: Int) = { implicit session: Session =>
@@ -299,6 +305,34 @@ object SampleFileDAO {
       var dateNum = sampleFile.sequencerRunDate
       var date = "20" + dateNum.substring(0, 2) + "-" + dateNum.substring(2, 4) + "-" + dateNum.substring(4, 6) + "T00:00:00"
       date
+   }
+
+   def getMD5Path(sampleFileId: Int) = { implicit session: Session =>
+      if (getAddedFileTypeFromId(sampleFileId)(session).equals("gpg")) {
+         val fullFileName = getSampleFileFromId(sampleFileId)(session).fileName
+         val strippedName = fullFileName.substring(fullFileName.length - 4)
+         val md5Name = strippedName + ".md5"
+         val md5SampleFile = sampleFiles.filter(s => s.fileName === md5Name).firstOption
+         if (md5SampleFile.isDefined) {
+            md5SampleFile.get.path
+         } else {
+            ""
+         }
+      }
+   }
+
+   def getGPGMD5Path(sampleFileId: Int) = { implicit session: Session =>
+      if (getAddedFileTypeFromId(sampleFileId)(session).equals("gpg")) {
+         val fullFileName = getSampleFileFromId(sampleFileId)(session).fileName
+         val strippedName = fullFileName.substring(fullFileName.length - 4)
+         val gpgMD5Name = strippedName + ".gpg.md5"
+         val gpgMD5SampleFile = sampleFiles.filter(s => s.fileName === gpgMD5Name).firstOption
+         if (gpgMD5SampleFile.isDefined) {
+            gpgMD5SampleFile.get.path
+         } else {
+            ""
+         }
+      }
    }
 
    def deleteAll() = { implicit session: Session =>

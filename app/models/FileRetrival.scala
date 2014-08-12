@@ -1,5 +1,6 @@
 package models;
 
+import scala.io.Source
 import scala.collection.immutable.List
 import scala.collection.mutable.ListBuffer
 
@@ -23,6 +24,23 @@ object FileRetrival {
       } catch {
          case ex: FileSystemException => {
             return new ListBuffer[String]().toList
+         }
+      }
+   }
+
+   def getFileContentsFromFTP(ftpSite: String, userName: String, password: String, filePath: String): String = {
+      var filePaths: ListBuffer[String] = new ListBuffer[String]()
+      try {
+         val authenticator: StaticUserAuthenticator = new StaticUserAuthenticator(ftpSite, userName, password)
+         val opts: FileSystemOptions = new FileSystemOptions()
+         DefaultFileSystemConfigBuilder.getInstance().setUserAuthenticator(opts, authenticator)
+         FtpFileSystemConfigBuilder.getInstance().setDataTimeout(opts, new Integer(600));
+         var fileObj = VFS.getManager().resolveFile("ftp://" + ftpSite + filePath, opts)
+         val inputStream = fileObj.getContent().getInputStream()
+         return Source.fromInputStream(inputStream).mkString
+      } catch {
+         case ex: FileSystemException => {
+            return ""
          }
       }
    }

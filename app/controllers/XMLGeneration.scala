@@ -14,9 +14,14 @@ import models.persistance.SampleFileDAO
 import models.persistance.TSVFileSampleLinkDAO
 import models.persistance.ReleaseTSVFileLinkDAO
 import models.persistance.SampleSampleFileLinkDAO
+import models.XMLCreators.SampleXMLCreator
 
 import scala.collection.mutable.ListBuffer
 import scala.collection.mutable.ArrayBuffer
+
+import java.nio.file.Path
+import java.nio.file.Paths
+import java.nio.file.Files
 
 object XMLGeneration extends Controller {
 
@@ -46,8 +51,26 @@ object XMLGeneration extends Controller {
       }
    }
 
-   def generateXMLs() = Action { request =>
-      //Generate XMLs here
+   def generateXMLs() = DBAction { implicit rs =>
+      var releaseName = rs.request.session.get("releaseName").get
+      var releaseId = ReleaseDAO.getReleaseIdFromName(releaseName)(rs.dbSession)
+      var fileId = 0
+      var fileName = ""
+      if (rs.request.session.get("viewFilesSamples").isDefined && !rs.request.session.get("viewFilesSamples").get.equals("all")) {
+         fileName = rs.request.session.get("viewFilesSamples").get
+         fileId = TSVFileDAO.getTSVIdFromFileNameAndReleaseName(fileName, releaseName)(rs.dbSession).get
+      }
+      var validSampleNames = ArrayBuffer[String]()
+      validSampleNames ++= getValidSampleNamesAndTypes(fileId, fileName, releaseId, releaseName)(rs.dbSession).keys
+      var directoryPath = Paths.get("./GeneratedXMLs/" + releaseName)
+      var validSampleBuffer = ListBuffer[Sample]()
+      for (name <- validSampleNames) {
+         validSampleBuffer += SampleDAO.getSampleFromSampleName(name)(rs.dbSession)
+      }
+      createXMLDictionary(directoryPath)
+
+      SampleXMLCreator.createSampleXML(directoryPath, validSampleBuffer.toList)(rs.dbSession)
+
       Redirect(routes.XMLSubmission.viewSubmissionPage)
    }
 
@@ -123,5 +146,17 @@ object XMLGeneration extends Controller {
          }
       }
       valid
+   }
+
+   def createXMLDictionary(path: Path) = {
+      if (Files.exists(path)) {
+         Files.deleteIfExists(Paths.get(path.toString() + "/sample.xml"))
+         Files.deleteIfExists(Paths.get(path.toString() + "/experiment.xml"))
+         Files.deleteIfExists(Paths.get(path.toString() + "/run.xml"))
+         Files.deleteIfExists(Paths.get(path.toString() + "/dataset.xml"))
+         Files.deleteIfExists(Paths.get(path.toString() + "/submission.xml"))
+      } else {
+         Files.createDirectories(path)
+      }
    }
 }

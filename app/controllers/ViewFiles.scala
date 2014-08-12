@@ -137,9 +137,9 @@ object ViewFiles extends Controller {
             } else {
                sampleLimsInfoId = SampleLIMSInfoDAO.getSampleLimsInfoByLibraryName(libraryName)(res.dbSession).get.id.get
             }
-            SampleFileDAO.createSampleFile(ftpFilePath, sampleLimsInfoId, "ftp")(res.dbSession)
+            SampleFileDAO.createSampleFile(ftpFilePath, sampleLimsInfoId, ftpCredentials.ftpSite)(res.dbSession)
             for (sampleName <- SampleDAO.getAllSampleNames()(res.dbSession)) {
-               if (fileName.indexOf(sampleName) != -1) {
+               if (fileName.indexOf(sampleName) != -1 && !SampleSampleFileLinkDAO.linkExists(sampleName, fileName)(res.dbSession)) {
                   SampleSampleFileLinkDAO.createLink(sampleName, fileName)(res.dbSession)
                }
             }
@@ -172,7 +172,7 @@ object ViewFiles extends Controller {
 
             SampleFileDAO.createSampleFile(localFilePath, sampleLimsInfoId, "local")(res.dbSession)
             for (sampleName <- SampleDAO.getAllSampleNames()(res.dbSession)) {
-               if (fileName.indexOf(sampleName) != -1) {
+               if (fileName.indexOf(sampleName) != -1 && !SampleSampleFileLinkDAO.linkExists(sampleName, fileName)(res.dbSession)) {
                   SampleSampleFileLinkDAO.createLink(sampleName, fileName)(res.dbSession)
                }
             }
