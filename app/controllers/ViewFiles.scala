@@ -125,9 +125,12 @@ object ViewFiles extends Controller {
                var startSample: JSONObject = LIMSRetrieval.getStartSample(samplesString, SampleFileDAO.getLibraryFromName(fileNameWithoutExtension))
                var donorName = LIMSRetrieval.getDonor(samplesString, startSample)
                var libraryMap = LIMSRetrieval.getLibraryInfo(samplesString, startSample) //LibraryMap will either be empty or have all the necessary fields
-               if (!libraryMap.isEmpty && donorName != "") {
-                  SampleLIMSInfoDAO.createSampleLimsInfo(libraryMap.get("Library Name").get, donorName, libraryMap.get("Library Strategy").get, libraryMap.get("Library Source").get, libraryMap.get("Library Selection Process").get)(res.dbSession)
+               if (!libraryMap.isEmpty && donorName != "" && libraryName.equals(libraryMap.get("Library Name").get)) {
+                  SampleLIMSInfoDAO.createSampleLimsInfo(libraryMap.get("Library Name").get, donorName, libraryMap.get("Library Strategy"), libraryMap.get("Library Source"), libraryMap.get("Library Selection Process"))(res.dbSession)
                   sampleLimsInfoId = SampleLIMSInfoDAO.getSampleLimsInfoByLibraryName(libraryName)(res.dbSession).get.id.get
+               } else if (!libraryMap.isEmpty && donorName != "") {
+                  println(libraryMap.get("Library Name").get + " is an unexpected library name. We expected to find " + libraryName)
+                  println("We will be ignoring this sample!")
                }
                //Note: If the libraryMap is empty, we let the sampleLimsInfoId be 0
                //This is because if we just make a link to the defaults, we may have an issue with the donor not existing(since the donor for each sample file linked to it would be different so we cannot make a single donor)
@@ -158,7 +161,7 @@ object ViewFiles extends Controller {
                var donorName = LIMSRetrieval.getDonor(samplesString, startSample)
                var libraryMap = LIMSRetrieval.getLibraryInfo(samplesString, startSample)
                if (!libraryMap.isEmpty && donorName != "") {
-                  SampleLIMSInfoDAO.createSampleLimsInfo(libraryMap.get("Library Name").get, donorName, libraryMap.get("Library Strategy").get, libraryMap.get("Library Source").get, libraryMap.get("Library Selection Process").get)(res.dbSession)
+                  SampleLIMSInfoDAO.createSampleLimsInfo(libraryMap.get("Library Name").get, donorName, libraryMap.get("Library Strategy"), libraryMap.get("Library Source"), libraryMap.get("Library Selection Process"))(res.dbSession)
                   sampleLimsInfoId = SampleLIMSInfoDAO.getSampleLimsInfoByLibraryName(libraryName)(res.dbSession).get.id.get
                }
                //Note: If the libraryMap is empty, we let the sampleLimsInfoId be 0

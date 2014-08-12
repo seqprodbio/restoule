@@ -55,7 +55,6 @@ object EgaReleases extends Controller {
                newSession = newSession - "invalidNewReleaseName"
             }
             if (values.size > 0) {
-               println(values(0))
                if (request.session.get("invalidViewRelease").isDefined) {
                   newSession = newSession - "invalidViewRelease"
                }

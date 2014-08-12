@@ -6,10 +6,11 @@ import play.api.db.slick._
 import play.api.data.{ Form }
 import play.api.data.Forms._
 import scala.collection.mutable.ArrayBuilder
+import scala.collection.mutable.ArrayBuffer
 import models.Sample
 import models.persistance.ReleaseDAO
 import models.persistance.TSVFileDAO
-import scala.collection.mutable.ArrayBuffer
+import models.persistance.SampleDAO
 import models.persistance.TSVFileSampleLinkDAO
 import models.persistance.ReleaseTSVFileLinkDAO
 
@@ -74,7 +75,7 @@ object XMLSubmission extends Controller {
    def areAllSamplesComplete(releaseName: String) = { implicit session: play.api.db.slick.Session =>
       var returnValue = true
       for (sample <- EgaReleaseSamples.getSamplesFromAllFiles(TSVFileDAO.getTSVFileNamesFromReleaseName(releaseName)(session), releaseName, "all")(session).keys) {
-         if (!sample.complete) {
+         if (!SampleDAO.hasCompleteSampleFile(sample)(session)) {
             returnValue = false
          }
       }
