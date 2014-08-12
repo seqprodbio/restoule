@@ -14,7 +14,7 @@ object SampleDAO {
    }
 
    def createSample(tsvFileName: String, releaseName: String, name: String) = { implicit session: Session =>
-      val newSample = new Sample(None, name, false, new java.sql.Timestamp(System.currentTimeMillis()))
+      val newSample = new Sample(None, name, new java.sql.Timestamp(System.currentTimeMillis()))
       samples.insert(newSample)
       TSVFileSampleLinkDAO.createTSVFileSampleLink(tsvFileName, releaseName, name)(session)
    }
@@ -50,5 +50,16 @@ object SampleDAO {
       } else {
          false
       }
+   }
+
+   def hasCompleteSampleFile(sample: Sample) = { implicit session: Session =>
+      var hasComplete = false
+      var fileIds = SampleSampleFileLinkDAO.getFileIdsFromSampleName(sample.name)(session)
+      for (fileId <- fileIds) {
+         if (SampleFileDAO.isSampleFileComplete(SampleFileDAO.getSampleFileFromId(fileId)(session))(session)) {
+            hasComplete = true
+         }
+      }
+      hasComplete
    }
 }

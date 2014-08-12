@@ -39,6 +39,8 @@ public class LDAPAuthentication {
          // Create initial context
          DirContext ctx = new InitialDirContext(env);
 
+         // The following if statement checks if the user is in the spbpde group. It is possible that some people were not added to this
+         // In that case, you may want to try adding them as a exception or trying to find a more suitable group to check
          if (checkIfInGroup(ctx, groupToCheck, username)) {
             Hashtable env2 = new Hashtable(11);
             env2.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");

@@ -32,6 +32,7 @@ object LIMSRetrieval {
       }
    }
 
+   //This function must return a map with either all of the library information, just the library name, or just an empty map
    def getLibraryInfo(samples: String, startSample: JSONObject): Map[String, String] = {
       var sample: JSONObject = startSample
       while (sample.has("sample")) {
@@ -50,6 +51,13 @@ object LIMSRetrieval {
             if (returnMap.contains("Library Strategy") && returnMap.contains("Library Source") && returnMap.contains("Library Selection Process")) {
                returnMap.put("Library Name", sample.getJSONObject("sample").getString("name"))
                return returnMap
+            } else {
+               if (sample.getJSONObject("sample").has("sample_type")) {
+                  if (isLibrary(sample.getJSONObject("sample").getString("sample_type"))) {
+                     println("This sample is a library with name: " + sample.getJSONObject("sample").getString("name") + " but is not valid")
+                     println("Data we have: " + returnMap)
+                  }
+               }
             }
          }
          var sampleString: String = "{}";
@@ -63,6 +71,11 @@ object LIMSRetrieval {
             }
          }
          sample = new JSONObject(sampleString);
+      }
+      if (startSample.has("sample") && startSample.getJSONObject("sample").has("sample_type") && isLibrary(startSample.getJSONObject("sample").getString("sample_type"))) {
+         var returnMap = Map[String, String]()
+         returnMap.put("Library Name", startSample.getJSONObject("sample").getString("name"))
+         return returnMap
       }
       return Map[String, String]()
    }

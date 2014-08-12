@@ -13,6 +13,43 @@ object SampleFileDAO {
 
    val sampleFiles = TableQuery[SampleFileTable]
 
+   val swidRegexString = "(SWID_[0-9]{4,6}_)"
+   val sampleRegexString = "([A-Z]{3,5})_([0-9]{3,4}|[0-9][CR][0-9]{1,2})_(nn|[A-Z]{1}[a-z]{1})_([nRPXMCFE])"
+   val libraryRegexString = sampleRegexString + "_(SE|PE|MP)_(nn|[0-9]{2,4}|[0-9]K)_(TS|EX|CH|BS|WG|TR|WT|SM|MR)"
+   val sequencerRunNameRegexString = "(_NoIndex|_([0-9]{6})_[a-zA-Z0-9]*_[0-9]*[A-Z]*_[a-zA-Z0-9-]*_?([A-Z]{2,})?)"
+   val sequencerRunNameWithNumberRegexString = "(_NoIndex|_([0-9]{6})_[a-zA-Z0-9]*_[A-Z0-9]*_[a-zA-Z0-9-]*_?([A-Z]{2,})?(_[0-9])?)"
+   val laneRegexString = "(_[0-9]|_L[0-9]{3})"
+   val readRegexString = "(_R[0-9])"
+   val barcodeRegexString = "(_NoIndex|_[ACTG]{6,10})"
+
+   val fileNameRegexString = "^" + swidRegexString + "?" + libraryRegexString + "(" + sequencerRunNameWithNumberRegexString + "(" + barcodeRegexString + "|_sd-seq|_mm)" + laneRegexString + "|" + sequencerRunNameRegexString + laneRegexString + barcodeRegexString + "?|" + barcodeRegexString + laneRegexString + sequencerRunNameWithNumberRegexString + ")" + readRegexString + "?(_[0-9]{3})?$"
+
+   // Regex groups:
+   // 1 Is the SWID
+   // 2_3_4_5_6_7_8 is the library
+   // 2_3_4_5 is the sample
+   // 9 is the gathered sequencer run, barcode and lane I think
+   // 10 is a possible sequencer run name
+   // 11 is the beginning of the sequencer run name, the date part
+   // 12 is always null ..... (I suspect it's supposed to be set of 2 letters (the end of sequence run name?))
+   // 13 is always null ..... I don't know what's supposed to be in it .....
+   // 14 is either null, _NoIndex, _sd-seq or _mm
+   // 15 is either null or _NoIndex
+   // 16 is a possible lane (either in Lnumber or number format)
+   // 17 is a possible sequencer run name
+   // 18 is the beginning of the sequencer run name, the date part
+   // 19 is a set of 2 letters (the end of sequence run name?)
+   // 20 is a possible lane (either in Lnumber or number format)
+   // 21 is either null or _NoIndex
+   // 22 is a possible barcode
+   // 23 is a possible lane
+   // 24 is a possible sequencer run name
+   // 25 is the beginning of the sequencer run name, the date part
+   // 26 is a set of 2 letters (the end of sequence run name?)
+   // 27 is a ending to a sequence run name with a _[0-9]
+   // 28 is the read
+   // 29 is a mysterious string that sometimes matches the end of the line
+
    def getAllSampleFiles() = { implicit session: Session =>
       sampleFiles.list
    }
@@ -51,6 +88,86 @@ object SampleFileDAO {
       regex.findFirstMatchIn(fileName).get.group(2)
    }
 
+   def getDonor(id: Int) = { implicit session: Session =>
+      var sampleFile = getSampleFileFromId(id)(session)
+      if (sampleFile.sampleLimsInfoId.isDefined) {
+         var libraryInfo = SampleLIMSInfoDAO.getSampleLimsInfoById(sampleFile.sampleLimsInfoId.get)(session).get
+         libraryInfo.donor
+      } else {
+         ""
+      }
+   }
+
+   def getLibraryName(id: Int) = { implicit session: Session =>
+      var sampleFile = getSampleFileFromId(id)(session)
+      if (sampleFile.sampleLimsInfoId.isDefined) {
+         var libraryInfo = SampleLIMSInfoDAO.getSampleLimsInfoById(sampleFile.sampleLimsInfoId.get)(session).get
+         libraryInfo.libraryName
+      } else {
+         sampleFile.library
+      }
+   }
+
+   def getLibraryStrategy(id: Int) = { implicit session: Session =>
+      var sampleFile = getSampleFileFromId(id)(session)
+      if (sampleFile.sampleLimsInfoId.isDefined) {
+         var libraryInfo = SampleLIMSInfoDAO.getSampleLimsInfoById(sampleFile.sampleLimsInfoId.get)(session).get
+         if (!libraryInfo.libraryStrategy.equals("")) {
+            libraryInfo.libraryStrategy
+         } else {
+            if (getLibraryEndingFromId(id)(session).equals("WG")) {
+               "WGS"
+            } else if (getLibraryEndingFromId(id)(session).equals("EX")) {
+               "WXS"
+            } else {
+               ""
+            }
+         }
+      } else {
+         ""
+      }
+   }
+
+   def getLibrarySource(id: Int) = { implicit session: Session =>
+      var sampleFile = getSampleFileFromId(id)(session)
+      if (sampleFile.sampleLimsInfoId.isDefined) {
+         var libraryInfo = SampleLIMSInfoDAO.getSampleLimsInfoById(sampleFile.sampleLimsInfoId.get)(session).get
+         if (!libraryInfo.librarySource.equals("")) {
+            libraryInfo.librarySource
+         } else {
+            if (getLibraryEndingFromId(id)(session).equals("WG")) {
+               "GENOMIC"
+            } else if (getLibraryEndingFromId(id)(session).equals("EX")) {
+               "GENOMIC"
+            } else {
+               ""
+            }
+         }
+      } else {
+         ""
+      }
+   }
+
+   def getLibrarySelection(id: Int) = { implicit session: Session =>
+      var sampleFile = getSampleFileFromId(id)(session)
+      if (sampleFile.sampleLimsInfoId.isDefined) {
+         var libraryInfo = SampleLIMSInfoDAO.getSampleLimsInfoById(sampleFile.sampleLimsInfoId.get)(session).get
+         if (!libraryInfo.librarySelection.equals("")) {
+            libraryInfo.librarySelection
+         } else {
+            if (getLibraryEndingFromId(id)(session).equals("WG")) {
+               "RANDOM"
+            } else if (getLibraryEndingFromId(id)(session).equals("EX")) {
+               "Hybrid Selection"
+            } else {
+               ""
+            }
+         }
+      } else {
+         ""
+      }
+   }
+
    def createSampleFile(path: String, sampleLimsInfoId: Int, origin: String) = { implicit session: Session =>
       var pathParts = path.split("/")
       var fileName = pathParts(pathParts.length - 1)
@@ -60,45 +177,12 @@ object SampleFileDAO {
       var sample = ""
       var library = ""
       var sequencerRunName = ""
+      var sequencerRunDate = ""
       var lane = 0
       var barcode = ""
       var read = 0
 
-      val swidRegexString = "(SWID_[0-9]{4,6}_)"
-      val sampleRegexString = "([A-Z]{3,5})_([0-9]{3,4}|[0-9][CR][0-9]{1,2})_(nn|[A-Z]{1}[a-z]{1})_([nRPXMCFE])"
-      val libraryRegexString = sampleRegexString + "_(SE|PE|MP)_(nn|[0-9]{2,4}|[0-9]K)_(TS|EX|CH|BS|WG|TR|WT|SM|MR)"
-      val sequencerRunNameRegexString = "(_NoIndex|_[0-9]*_[a-zA-Z0-9]*_[0-9]*[A-Z]*_[a-zA-Z0-9-]*_?([A-Z]{2,})?)"
-      val sequencerRunNameWithNumberRegexString = "(_NoIndex|_[0-9]*_[a-zA-Z0-9]*_[A-Z0-9]*_[a-zA-Z0-9-]*_?([A-Z]{2,})?(_[0-9])?)"
-      val laneRegexString = "(_[0-9]|_L[0-9]{3})"
-      val readRegexString = "(_R[0-9])"
-      val barcodeRegexString = "(_NoIndex|_[ACTG]{6,10})"
-
-      val finalRegexString = "^" + swidRegexString + "?" + libraryRegexString + "(" + sequencerRunNameWithNumberRegexString + "(" + barcodeRegexString + "|_sd-seq|_mm)" + laneRegexString + "|" + sequencerRunNameRegexString + laneRegexString + barcodeRegexString + "?|" + barcodeRegexString + laneRegexString + sequencerRunNameWithNumberRegexString + ")" + readRegexString + "?(_[0-9]{3})?$"
-
-      var regex = finalRegexString.r
-
-      // Regex groups:
-      // 1 Is the SWID
-      // 2_3_4_5_6_7_8 is the library
-      // 2_3_4_5 is the sample
-      // 9 is the gathered sequencer run, barcode and lane I think
-      // 10 is a possible sequencer run name
-      // 11 is always null ..... I don't know what's supposed to be in it .....
-      // 12 is always null ..... I don't know what's supposed to be in it .....
-      // 13 is either null, _NoIndex, _sd-seq or _mm
-      // 14 is either null or _NoIndex
-      // 15 is a possible lane (either in Lnumber or number format)
-      // 16 is a possible sequencer run name
-      // 17 is a set of 2 letters (the end of sequence run name?)
-      // 18 is a possible lane (either in Lnumber or number format)
-      // 19 is either null or _NoIndex
-      // 20 is a possible barcode
-      // 21 is a possible lane
-      // 22 is a possible sequencer run name
-      // 23 is a set of 2 letters (the end of sequence run name?)
-      // 24 is a ending to a sequence run name with a _[0-9]
-      // 25 is the read
-      // 26 is a mysterious string consisting of 3 numbers that sometimes matches the end of the line
+      var regex = fileNameRegexString.r
 
       if (regex.findFirstMatchIn(fileNameWithoutExtension).isDefined) {
          var dataMatch = regex.findFirstMatchIn(fileNameWithoutExtension).get
@@ -115,24 +199,34 @@ object SampleFileDAO {
                library = sample + "_" + dataMatch.group(6) + "_" + dataMatch.group(7) + "_" + dataMatch.group(8)
             }
          }
-         if (dataMatch.group(10) != null || dataMatch.group(16) != null || dataMatch.group(22) != null) {
+         if (dataMatch.group(10) != null || dataMatch.group(17) != null || dataMatch.group(24) != null) {
             if (dataMatch.group(10) != null) {
                sequencerRunName = dataMatch.group(10).substring(1) //The substring is there to take out the  _
-            } else if (dataMatch.group(16) != null) {
-               sequencerRunName = dataMatch.group(16).substring(1)
+            } else if (dataMatch.group(17) != null) {
+               sequencerRunName = dataMatch.group(17).substring(1)
             } else {
-               sequencerRunName = dataMatch.group(22).substring(1)
+               sequencerRunName = dataMatch.group(24).substring(1)
             }
          }
 
-         if (dataMatch.group(15) != null || dataMatch.group(18) != null || dataMatch.group(21) != null) {
-            var matchNumber = 0
-            if (dataMatch.group(15) != null) {
-               matchNumber = 15
+         if (dataMatch.group(11) != null || dataMatch.group(18) != null || dataMatch.group(25) != null) {
+            if (dataMatch.group(11) != null) {
+               sequencerRunDate = dataMatch.group(11)
             } else if (dataMatch.group(18) != null) {
-               matchNumber = 18
+               sequencerRunDate = dataMatch.group(18)
             } else {
-               matchNumber = 21
+               sequencerRunDate = dataMatch.group(25)
+            }
+         }
+
+         if (dataMatch.group(16) != null || dataMatch.group(20) != null || dataMatch.group(23) != null) {
+            var matchNumber = 0
+            if (dataMatch.group(16) != null) {
+               matchNumber = 16
+            } else if (dataMatch.group(20) != null) {
+               matchNumber = 20
+            } else {
+               matchNumber = 23
             }
             var laneString = dataMatch.group(matchNumber).substring(1) //The substring is there to take out the  _
             if (laneString.charAt(0).equals('L')) {
@@ -150,13 +244,13 @@ object SampleFileDAO {
             }
          }
 
-         if (dataMatch.group(20) != null && !dataMatch.group(20).equals("_NoIndex")) {
-            barcode = dataMatch.group(20)
+         if (dataMatch.group(22) != null && !dataMatch.group(22).equals("_NoIndex")) {
+            barcode = dataMatch.group(22)
          }
 
-         if (dataMatch.group(25) != null) {
+         if (dataMatch.group(28) != null) {
             try {
-               read = dataMatch.group(25).substring(2).toInt //The substring starts at 2 to take out the  _R
+               read = dataMatch.group(28).substring(2).toInt //The substring starts at 2 to take out the  _R
             } catch {
                case e: Exception => read = 0
             }
@@ -166,24 +260,15 @@ object SampleFileDAO {
       if (sampleLimsInfoId != 0) {
          sampleLimsInfoIdOption = Some(sampleLimsInfoId)
       }
-      var newSampleFile = new SampleFile(None, sampleLimsInfoIdOption, fileName, path, origin, swid, sample, library, sequencerRunName, lane, barcode, read, new java.sql.Timestamp(System.currentTimeMillis()))
+      var newSampleFile = new SampleFile(None, sampleLimsInfoIdOption, fileName, path, origin, swid, sample, library, sequencerRunName, sequencerRunDate, lane, barcode, read, new java.sql.Timestamp(System.currentTimeMillis()))
       sampleFiles.insert(newSampleFile)
    }
 
    def getLibraryFromName(name: String): String = {
       var library = ""
-      val swidRegexString = "(SWID_[0-9]{4,6}_)"
-      val sampleRegexString = "([A-Z]{3,5})_([0-9]{3,4}|[0-9][CR][0-9]{1,2})_(nn|[A-Z]{1}[a-z]{1})_([nRPXMCFE])"
-      val libraryRegexString = sampleRegexString + "_(SE|PE|MP)_(nn|[0-9]{2,4}|[0-9]K)_(TS|EX|CH|BS|WG|TR|WT|SM|MR)"
-      val sequencerRunNameRegexString = "(_NoIndex|_[0-9]*_[a-zA-Z0-9]*_[0-9]*[A-Z]*_[a-zA-Z0-9-]*_?([A-Z]{2,})?)"
-      val sequencerRunNameWithNumberRegexString = "(_NoIndex|_[0-9]*_[a-zA-Z0-9]*_[A-Z0-9]*_[a-zA-Z0-9-]*_?([A-Z]{2,})?(_[0-9])?)"
-      val laneRegexString = "(_[0-9]|_L[0-9]{3})"
-      val readRegexString = "(_R[0-9])"
-      val barcodeRegexString = "(_NoIndex|_[ACTG]{6,10})"
 
-      val finalRegexString = "^" + swidRegexString + "?" + libraryRegexString + "(" + sequencerRunNameWithNumberRegexString + "(" + barcodeRegexString + "|_sd-seq|_mm)" + laneRegexString + "|" + sequencerRunNameRegexString + laneRegexString + barcodeRegexString + "?|" + barcodeRegexString + laneRegexString + sequencerRunNameWithNumberRegexString + ")" + readRegexString + "?(_[0-9]{3})?$"
+      var regex = fileNameRegexString.r
 
-      var regex = finalRegexString.r
       if (regex.findFirstMatchIn(name).isDefined) {
          var dataMatch = regex.findFirstMatchIn(name).get
          if (dataMatch.group(2) != null && dataMatch.group(3) != null && dataMatch.group(4) != null && dataMatch.group(5) != null && dataMatch.group(6) != null && dataMatch.group(7) != null && dataMatch.group(8) != null) {
@@ -204,7 +289,33 @@ object SampleFileDAO {
       return library
    }
 
+   def getLibraryEndingFromId(id: Int) = { implicit session: Session =>
+      var library = getSampleFileFromId(id)(session).library
+      library.substring(library.length - 2)
+   }
+
    def deleteAll() = { implicit session: Session =>
       sampleFiles.delete
+   }
+
+   def isSampleFileComplete(sampleFile: SampleFile) = { implicit session: Session =>
+      var libraryEnd = getLibraryEndingFromId(sampleFile.id.get)(session)
+      if (!sampleFile.fileName.equals("") && sampleFile.sampleLimsInfoId.isDefined && (libraryEnd.equals("WG") || libraryEnd.equals("EX") || SampleLIMSInfoDAO.isComplete(sampleFile.sampleLimsInfoId.get)(session)) && doesNameMatchRegex(sampleFile.fileName)) {
+         true
+      } else {
+         false
+      }
+   }
+
+   def isSampleFileCompleteFromId(id: Int) = { implicit session: Session =>
+      isSampleFileComplete(getSampleFileFromId(id)(session))(session)
+   }
+
+   def doesNameMatchRegex(fileName: String): Boolean = {
+      var fileNameParts = fileName.split("\\.")
+      var fileNameWithoutExtension = fileNameParts(0)
+      var regex = fileNameRegexString.r
+
+      return regex.findFirstMatchIn(fileNameWithoutExtension).isDefined
    }
 }
