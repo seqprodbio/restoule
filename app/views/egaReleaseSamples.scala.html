@@ -216,7 +216,7 @@
                     <td class="headerCell">&nbspFilename&nbsp</td>
                     <td class="headerCell">&nbspFS&nbsp</td>
                     <td class="headerCell">&nbspRun&nbsp</td>
-                    <td class="headerCell">&nbspBarcode&nbsp</td>
+                    <td class="headerCell">&nbspRun Date&nbsp</td>
                     <td class="headerCell">&nbspDonor&nbsp</td>
                     <td class="headerCell">&nbspLibrary Name&nbsp</td>
                     <td class="headerCell">&nbspLibrary Strategy&nbsp</td>
@@ -235,7 +235,7 @@
                                 <td class="@getSampleFileContentCellClass(sampleFile)">&nbsp@(sampleFile.fileName)&nbsp</td>
                                 <td class="@getSampleFileContentCellClass(sampleFile)">&nbsp@(sampleFile.origin)&nbsp</td>
                                 <td class="@getSampleFileContentCellClass(sampleFile)">&nbsp@(sampleFile.sequencerRunName)&nbsp</td>
-                                <td class="@getSampleFileContentCellClass(sampleFile)">&nbsp@(sampleFile.barcode)&nbsp</td>
+                                <td class="@getSampleFileContentCellClass(sampleFile)">&nbsp@(SampleFileDAO.getSequencerRunDateString(sampleFile.id.get)(dbSession))&nbsp</td>
                                 <td class="@getSampleFileContentCellClass(sampleFile)">&nbsp@(SampleFileDAO.getDonor(sampleFile.id.get)(dbSession))&nbsp</td>
                                 <td class="@getSampleFileContentCellClass(sampleFile)">&nbsp@(SampleFileDAO.getLibraryName(sampleFile.id.get)(dbSession))&nbsp</td>
                                 <td class="@getSampleFileContentCellClass(sampleFile)">&nbsp@(SampleFileDAO.getLibraryStrategy(sampleFile.id.get)(dbSession))&nbsp</td>

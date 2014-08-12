@@ -1,12 +1,16 @@
-@(xmlNamesToGenerate: Array[String])(implicit session: Session)
+@(validSampleNames: Array[String], validSampleFileNames: Array[String])(implicit session: Session)
 
 <!DOCTYPE html>
 
 <html>
     <head>
         <style>
-            #xmlFileNames {
-                text-align: center;
+            .displayDiv {
+                width: 80%;
+                height: 200px;
+                margin: 0 auto;
+                overflow: scroll;
+                text-align:center;
             }
         </style>
     </head>
@@ -19,11 +23,28 @@
         } else {
             all of the tsv files in the @(session.get("releaseName").get) release! </p>
         }
-        <p>Here is a list of the XML files that will be generated: </p>
-        <div id="xmlFileNames">
-            @for(xmlName <- xmlNamesToGenerate){
-                <p>@(xmlName)</p>
-            }
+        <p>Here is the list of samples that will be included in the XMLs:</p>
+        <br>
+        <div style="width:100%">
+            <div class="displayDiv">
+                @for(sampleName <- validSampleNames){
+                    <p>@(sampleName)</p>
+                }
+            </div>
+        </div>
+        <br>
+        <br>
+        <p>Here is a list of the sample files that will be included in the XMLs: </p>
+        <br>
+        <div style="width:100%">
+            <div class="displayDiv">
+                @for(sampleFileName <- validSampleFileNames){
+                    <p>@(sampleFileName)</p>
+                }
+            </div>
+        </div>
+        <br>
+        <div style="text-align:center">
             <form action="@routes.XMLGeneration.generateXMLs" method="POST">
                 <input type="submit" value="Generate!"/>
             </form>

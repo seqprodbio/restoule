@@ -294,6 +294,13 @@ object SampleFileDAO {
       library.substring(library.length - 2)
    }
 
+   def getSequencerRunDateString(id: Int) = { implicit session: Session =>
+      var sampleFile = getSampleFileFromId(id)(session)
+      var dateNum = sampleFile.sequencerRunDate
+      var date = "20" + dateNum.substring(0, 2) + "-" + dateNum.substring(2, 4) + "-" + dateNum.substring(4, 6) + "T00:00:00"
+      date
+   }
+
    def deleteAll() = { implicit session: Session =>
       sampleFiles.delete
    }
