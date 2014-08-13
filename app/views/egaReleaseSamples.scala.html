@@ -18,6 +18,14 @@
     }
 }
 
+@md5Exists(path: String) = {
+    @if(path.equals("")){
+        false
+    } else {
+        true
+    }
+}
+
 <!DOCTYPE html>
 <html> 
     <head>
@@ -218,12 +226,16 @@
                     <td></td>
                     <td></td>
                     <td></td>
+                    <td></td>
+                    <td></td>
                     <td colspan="5" class="headerCell">LIMS</td>
                 </tr>
                 <tr>
                     <td class="headerCell">&nbspSample&nbsp</td>
                     <td class="headerCell">&nbspFilename&nbsp</td>
                     <td class="headerCell">&nbspFS&nbsp</td>
+                    <td class="headerCell">&nbspData MD5 Sum Exists&nbsp</td>
+                    <td class="headerCell">&nbspEncrypted Data MD5 Sum Exists&nbsp</td>
                     <td class="headerCell">&nbspRun&nbsp</td>
                     <td class="headerCell">&nbspRun Date&nbsp</td>
                     <td class="headerCell">&nbspNominal Length&nbsp</td>
@@ -244,6 +256,8 @@
                                 <td class="@getSampleFileContentCellClass(sampleFile)">&nbsp@(sample.name)&nbsp</td>
                                 <td class="@getSampleFileContentCellClass(sampleFile)">&nbsp@(sampleFile.fileName)&nbsp</td>
                                 <td class="@getSampleFileContentCellClass(sampleFile)">@localOrFTP(sampleFile.origin)</td>
+                                <td class="@getSampleFileContentCellClass(sampleFile)">@md5Exists(SampleFileDAO.getMD5Path(sampleFile.id.get)(dbSession))</td>
+                                <td class="@getSampleFileContentCellClass(sampleFile)">@md5Exists(SampleFileDAO.getGPGMD5Path(sampleFile.id.get)(dbSession))</td>
                                 <td class="@getSampleFileContentCellClass(sampleFile)">&nbsp@(sampleFile.sequencerRunName)&nbsp</td>
                                 <td class="@getSampleFileContentCellClass(sampleFile)">&nbsp@(SampleFileDAO.getSequencerRunDateString(sampleFile.id.get)(dbSession))&nbsp</td>
                                 <td class="@getSampleFileContentCellClass(sampleFile)">&nbsp@(SampleFileDAO.getNominalLengthFromLibraryName(sampleFile.library))&nbsp</td>
@@ -267,10 +281,14 @@
                             <td class="incompleteContentCell">&nbsp&nbsp</td>
                             <td class="incompleteContentCell">&nbsp&nbsp</td>
                             <td class="incompleteContentCell">&nbsp&nbsp</td>
+                            <td class="incompleteContentCell">&nbsp&nbsp</td>
+                            <td class="incompleteContentCell">&nbsp&nbsp</td>
                         </tr>
                     }
                 }
                 <tr>
+                    <td class="bottomCell"></td>
+                    <td class="bottomCell"></td>
                     <td class="bottomCell"></td>
                     <td class="bottomCell"></td>
                     <td class="bottomCell"></td>

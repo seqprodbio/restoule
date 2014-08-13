@@ -7,16 +7,23 @@ import play.api.data.{ Form }
 import play.api.data.Forms._
 import models.Sample
 import models.SampleFile
+import models.FileRetrival
 import models.SampleLIMSInfo
+import models.FTPCredentials
 import models.persistance.SampleDAO
 import models.persistance.ReleaseDAO
 import models.persistance.TSVFileDAO
 import models.persistance.SampleFileDAO
 import models.persistance.SampleLIMSInfoDAO
+import models.persistance.FTPCredentialsDAO
 import models.persistance.TSVFileSampleLinkDAO
 import models.persistance.ReleaseTSVFileLinkDAO
 import models.persistance.SampleSampleFileLinkDAO
+import models.XMLCreators.RunXMLData
+import models.XMLCreators.RunXMLCreator
+import models.XMLCreators.SampleFileData
 import models.XMLCreators.SampleXMLCreator
+import models.XMLCreators.ExperimentXMLData
 import models.XMLCreators.ExperimentXMLCreator
 import scala.collection.mutable.Map
 import scala.collection.mutable.ListBuffer
@@ -24,8 +31,6 @@ import scala.collection.mutable.ArrayBuffer
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.nio.file.Files
-import models.SampleLIMSInfo
-import models.SampleLIMSInfo
 
 object XMLGeneration extends Controller {
 
@@ -78,12 +83,14 @@ object XMLGeneration extends Controller {
 
       validSampleFiles ++= getSampleFilesFromSamplesAndValidTypes(validSampleNamesAndFileTypes)(rs.dbSession)
 
-      var sampleNamesToLIMSInfo = getMapOfSampleAndLIMSInfoFromSampleFiles(validSampleFiles.toArray, validSampleNames.toArray)(rs.dbSession)
+      var experimentData = getExperimentXMLData(validSampleFiles.toArray, validSampleNames.toArray)(rs.dbSession)
+      var runData: List[RunXMLData] = getRunXMLData(validSampleFiles)(rs.dbSession)
 
       createXMLDirectory(directoryPath)
 
       SampleXMLCreator.createSampleXML(directoryPath, validSampleBuffer.toList)(rs.dbSession)
-      ExperimentXMLCreator.createExperimentXML(directoryPath, sampleNamesToLIMSInfo)(rs.dbSession)
+      ExperimentXMLCreator.createExperimentXML(directoryPath, experimentData)
+      RunXMLCreator.createRunXML(directoryPath, runData)
 
       Redirect(routes.XMLSubmission.viewSubmissionPage)
    }
@@ -162,43 +169,49 @@ object XMLGeneration extends Controller {
       valid
    }
 
-   def getMapOfSampleAndLIMSInfoFromSampleFiles(validSampleFile: Array[SampleFile], validSampleNames: Array[String]) = { implicit session: play.api.db.slick.Session =>
-      var sampleAndLimsInfoMap = scala.collection.mutable.Map[String, SampleLIMSInfo]()
-      for (sampleFile <- validSampleFile) {
+   def getExperimentXMLData(validSampleFiles: Array[SampleFile], validSampleNames: Array[String]) = { implicit session: play.api.db.slick.Session =>
+      var experimentXMLData = new ListBuffer[ExperimentXMLData]()
+      for (sampleFile <- validSampleFiles) {
          var parentSampleIds: List[Int] = SampleSampleFileLinkDAO.getSampleIdsFromFileName(sampleFile.fileName)(session)
          var parentSampleName = getValidParentSampleName(validSampleNames, parentSampleIds)(session)
-         if (sampleFile.sampleLimsInfoId.isDefined) {
-            var limsInfo: SampleLIMSInfo = SampleLIMSInfoDAO.getSampleLimsInfoById(sampleFile.sampleLimsInfoId.get)(session).get
-            var libraryStrategy = limsInfo.libraryStrategy
-            var librarySource = limsInfo.librarySource
-            var librarySelection = limsInfo.librarySelection
-            if (SampleFileDAO.getLibraryEndingFromId(sampleFile.id.get)(session).equals("WG")) {
-               if (libraryStrategy.equals("")) {
-                  libraryStrategy = "WGS"
-               }
-               if (librarySource.equals("")) {
-                  librarySource = "GENOMIC"
-               }
-               if (librarySelection.equals("")) {
-                  librarySelection = "RANDOM"
-               }
-            } else if (SampleFileDAO.getLibraryEndingFromId(sampleFile.id.get)(session).equals("EX")) {
-               if (libraryStrategy.equals("")) {
-                  libraryStrategy = "WXS"
-               }
-               if (librarySource.equals("")) {
-                  librarySource = "GENOMIC"
-               }
-               if (librarySelection.equals("")) {
-                  librarySelection = "Hybrid Selection"
-               }
+         var limsInfo: SampleLIMSInfo = SampleLIMSInfoDAO.getSampleLimsInfoById(sampleFile.sampleLimsInfoId.get)(session).get
+         var libraryName = limsInfo.libraryName
+         var libraryStrategy = limsInfo.libraryStrategy
+         var librarySource = limsInfo.librarySource
+         var librarySelection = limsInfo.librarySelection
+         var nominalLength = SampleFileDAO.getNominalLengthFromLibraryName(libraryName)
+         if (SampleFileDAO.getLibraryEndingFromId(sampleFile.id.get)(session).equals("WG")) {
+            if (libraryStrategy.equals("")) {
+               libraryStrategy = "WGS"
             }
-            sampleAndLimsInfoMap += (parentSampleName -> new SampleLIMSInfo(limsInfo.id, limsInfo.libraryName, limsInfo.donor, libraryStrategy, librarySource, librarySelection, limsInfo.created))
-         } else {
-            println("ERROR! SAMPLE FILE " + sampleFile.fileName + " IS IN RELEASE WITHOUT A SAMPLE LIMS INFO ID! IT IS INCOMPLETE!")
+            if (librarySource.equals("")) {
+               librarySource = "GENOMIC"
+            }
+            if (librarySelection.equals("")) {
+               librarySelection = "RANDOM"
+            }
+         } else if (SampleFileDAO.getLibraryEndingFromId(sampleFile.id.get)(session).equals("EX")) {
+            if (libraryStrategy.equals("")) {
+               libraryStrategy = "WXS"
+            }
+            if (librarySource.equals("")) {
+               librarySource = "GENOMIC"
+            }
+            if (librarySelection.equals("")) {
+               librarySelection = "Hybrid Selection"
+            }
+         }
+         var libraryExists = false
+         for (experimentData <- experimentXMLData) {
+            if (experimentData.libraryName.equals(libraryName)) {
+               libraryExists = true
+            }
+         }
+         if (!libraryExists) {
+            experimentXMLData += new ExperimentXMLData(libraryName, parentSampleName, libraryStrategy, librarySource, librarySelection, nominalLength)
          }
       }
-      sampleAndLimsInfoMap
+      experimentXMLData.toList
    }
 
    def getValidParentSampleName(validSampleNames: Array[String], parentSampleIds: List[Int]) = { implicit session: play.api.db.slick.Session =>
@@ -210,6 +223,56 @@ object XMLGeneration extends Controller {
          }
       }
       parentName
+   }
+
+   def getRunXMLData(validSampleFiles: ArrayBuffer[SampleFile]) = { implicit session: play.api.db.slick.Session =>
+      var runXMLData = new ListBuffer[RunXMLData]()
+      for (sampleFile <- validSampleFiles) {
+         if (SampleFileDAO.isDataFile(sampleFile.fileName)) {
+            val checksumPath: String = SampleFileDAO.getMD5Path(sampleFile.id.get)(session)
+            val checksumFile = SampleFileDAO.getSampleFileFromPath(checksumPath)(session)
+            var checksum: String = ""
+            val encryptedChecksumPath = SampleFileDAO.getGPGMD5Path(sampleFile.id.get)(session)
+            val encryptedChecksumFile = SampleFileDAO.getSampleFileFromPath(checksumPath)(session)
+            var encryptedChecksum: String = ""
+            var originalFileType = SampleFileDAO.getFileTypeFromId(sampleFile.id.get)(session)
+
+            if (originalFileType.equals("fastq.gz")) {
+               originalFileType = "fastq"
+            }
+
+            if (!checksumFile.origin.equals("local")) {
+               val ftpCredentials = FTPCredentialsDAO.getFTPCredentialsFromSite(checksumFile.origin)(session)
+               checksum = FileRetrival.getFileContentsFromFTP(ftpCredentials.ftpSite, ftpCredentials.userName, ftpCredentials.password, checksumPath).trim
+            }
+            if (!encryptedChecksumFile.origin.equals("local")) {
+               val ftpCredentials = FTPCredentialsDAO.getFTPCredentialsFromSite(encryptedChecksumFile.origin)(session)
+               encryptedChecksum = FileRetrival.getFileContentsFromFTP(ftpCredentials.ftpSite, ftpCredentials.userName, ftpCredentials.password, encryptedChecksumPath).trim
+            }
+
+            var fileData = new SampleFileData(sampleFile.path, originalFileType, "MD5", checksum, encryptedChecksum)
+            var fileAlias = sampleFile.library + "_" + sampleFile.sequencerRunName + "_" + sampleFile.lane
+            if (!sampleFile.barcode.equals("")) {
+               fileAlias += sampleFile.barcode
+            }
+            var runDataWithAliasExists = false
+
+            //Try to find a run with the alias expected by the file, if not create one
+            for (runData <- runXMLData) {
+               if (runData.alias.equals(fileAlias)) {
+                  var tempFiles = fileData :: runData.files
+                  var newRunData = new RunXMLData(runData.alias, runData.runDate, runData.experimentRef, tempFiles)
+                  runXMLData -= runData
+                  runXMLData += newRunData
+                  runDataWithAliasExists = true
+               }
+            }
+            if (!runDataWithAliasExists) {
+               runXMLData += new RunXMLData(fileAlias, SampleFileDAO.getSequencerRunDateString(sampleFile.id.get)(session), sampleFile.library, List(fileData))
+            }
+         }
+      }
+      runXMLData.toList
    }
 
    def createXMLDirectory(path: Path) = {

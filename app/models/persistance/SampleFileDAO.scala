@@ -82,6 +82,10 @@ object SampleFileDAO {
       sampleFiles.filter(s => s.id === id).first
    }
 
+   def getSampleFileFromPath(path: String) = { implicit session: Session =>
+      sampleFiles.filter(s => s.path === path).first
+   }
+
    def getFileTypeFromId(id: Int) = { implicit session: Session =>
       var fileName = sampleFiles.filter(s => s.id === id).map(s => s.fileName).first
       val regex = "^(.+?)\\.(bam|fastq\\.gz)\\.(gpg\\.md5|gpg|md5)$".r
@@ -323,9 +327,9 @@ object SampleFileDAO {
    }
 
    def getMD5Path(sampleFileId: Int) = { implicit session: Session =>
-      if (getAddedFileTypeFromId(sampleFileId)(session).equals("gpg")) {
+      if (isDataFile(getSampleFileFromId(sampleFileId)(session).fileName)) {
          val fullFileName = getSampleFileFromId(sampleFileId)(session).fileName
-         val strippedName = fullFileName.substring(fullFileName.length - 4)
+         val strippedName = fullFileName.substring(0, fullFileName.length - 4)
          val md5Name = strippedName + ".md5"
          val md5SampleFile = sampleFiles.filter(s => s.fileName === md5Name).firstOption
          if (md5SampleFile.isDefined) {
@@ -333,13 +337,15 @@ object SampleFileDAO {
          } else {
             ""
          }
+      } else {
+         ""
       }
    }
 
    def getGPGMD5Path(sampleFileId: Int) = { implicit session: Session =>
-      if (getAddedFileTypeFromId(sampleFileId)(session).equals("gpg")) {
+      if (isDataFile(getSampleFileFromId(sampleFileId)(session).fileName)) {
          val fullFileName = getSampleFileFromId(sampleFileId)(session).fileName
-         val strippedName = fullFileName.substring(fullFileName.length - 4)
+         val strippedName = fullFileName.substring(0, fullFileName.length - 4)
          val gpgMD5Name = strippedName + ".gpg.md5"
          val gpgMD5SampleFile = sampleFiles.filter(s => s.fileName === gpgMD5Name).firstOption
          if (gpgMD5SampleFile.isDefined) {
@@ -347,6 +353,8 @@ object SampleFileDAO {
          } else {
             ""
          }
+      } else {
+         ""
       }
    }
 
@@ -356,7 +364,7 @@ object SampleFileDAO {
 
    def isSampleFileComplete(sampleFile: SampleFile) = { implicit session: Session =>
       var libraryEnd = getLibraryEndingFromId(sampleFile.id.get)(session)
-      if (!sampleFile.fileName.equals("") && sampleFile.sampleLimsInfoId.isDefined && (libraryEnd.equals("WG") || libraryEnd.equals("EX") || SampleLIMSInfoDAO.isComplete(sampleFile.sampleLimsInfoId.get)(session)) && doesNameMatchRegex(sampleFile.fileName) && getNominalLengthFromLibraryName(sampleFile.library) != 0) {
+      if (!sampleFile.fileName.equals("") && sampleFile.sampleLimsInfoId.isDefined && (libraryEnd.equals("WG") || libraryEnd.equals("EX") || SampleLIMSInfoDAO.isComplete(sampleFile.sampleLimsInfoId.get)(session)) && doesNameMatchRegex(sampleFile.fileName) && getNominalLengthFromLibraryName(sampleFile.library) != 0 && !getMD5Path(sampleFile.id.get)(session).equals("") && !getGPGMD5Path(sampleFile.id.get)(session).equals("")) {
          true
       } else {
          false
@@ -365,6 +373,14 @@ object SampleFileDAO {
 
    def isSampleFileCompleteFromId(id: Int) = { implicit session: Session =>
       isSampleFileComplete(getSampleFileFromId(id)(session))(session)
+   }
+
+   def isDataFile(fileName: String): Boolean = {
+      if (fileName.substring(fileName.length - 3).equals("gpg")) {
+         return true
+      } else {
+         return false
+      }
    }
 
    def doesNameMatchRegex(fileName: String): Boolean = {

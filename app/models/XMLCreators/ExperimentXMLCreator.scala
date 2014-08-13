@@ -11,11 +11,11 @@ import models.persistance.SampleFileDAO
 
 object ExperimentXMLCreator {
 
-   def createExperimentXML(directory: Path, sampleNameToLIMSInfo: scala.collection.mutable.Map[String, SampleLIMSInfo]) = { implicit session: Session =>
+   def createExperimentXML(directory: Path, experimentData: List[ExperimentXMLData]) = {
       var filePath = directory.resolve("experiment.xml")
       try {
          Files.createFile(filePath)
-         writeToFile(filePath, sampleNameToLIMSInfo)(session)
+         writeToFile(filePath, experimentData)
       } catch {
          case ex: FileAlreadyExistsException => {
             println("experiment.xml file already exists at this location: " + filePath)
@@ -30,13 +30,13 @@ object ExperimentXMLCreator {
       }
    }
 
-   def writeToFile(filePath: Path, sampleNameToLIMSInfo: scala.collection.mutable.Map[String, SampleLIMSInfo]) = { implicit session: Session =>
+   def writeToFile(filePath: Path, experimentData: List[ExperimentXMLData]) = {
       val charset: Charset = Charset.forName("UTF-8")
       try {
          var writer: BufferedWriter = Files.newBufferedWriter(filePath, charset)
          writeHeader(writer)
-         for (sampleName <- sampleNameToLIMSInfo.keys) {
-            writeExperiment(writer, sampleName, sampleNameToLIMSInfo.get(sampleName).get)
+         for (experimentInfo <- experimentData) {
+            writeExperiment(writer, experimentInfo)
          }
          var xmlString = "</EXPERIMENT_SET>"
          SampleXMLCreator.writeLine(writer, xmlString)
@@ -59,30 +59,30 @@ object ExperimentXMLCreator {
    }
 
    @throws(classOf[IOException])
-   def writeExperiment(writer: BufferedWriter, sampleName: String, limsInfo: SampleLIMSInfo) {
-      var xmlString = "   <EXPERIMENT alias=\"" + limsInfo.libraryName + "\" center_name=\"OICR_ICGC\">"
+   def writeExperiment(writer: BufferedWriter, experimentData: ExperimentXMLData) {
+      var xmlString = "   <EXPERIMENT alias=\"" + experimentData.libraryName + "\" center_name=\"OICR_ICGC\">"
       SampleXMLCreator.writeLine(writer, xmlString)
       xmlString = "      <STUDY_REF refname=\"Pancreatic Cancer OICR\" />"
       SampleXMLCreator.writeLine(writer, xmlString)
       xmlString = "      <DESIGN>"
       SampleXMLCreator.writeLine(writer, xmlString)
-      xmlString = "         <DESIGN_DESCRIPTION>" + limsInfo.libraryName + "</DESIGN_DESCRIPTION>"
+      xmlString = "         <DESIGN_DESCRIPTION>" + experimentData.libraryName + "</DESIGN_DESCRIPTION>"
       SampleXMLCreator.writeLine(writer, xmlString)
-      xmlString = "         <SAMPLE_DESCRIPTOR refname=\"" + sampleName + "\" />"
+      xmlString = "         <SAMPLE_DESCRIPTOR refname=\"" + experimentData.sampleName + "\" />"
       SampleXMLCreator.writeLine(writer, xmlString)
       xmlString = "         <LIBRARY_DESCRIPTOR>"
       SampleXMLCreator.writeLine(writer, xmlString)
-      xmlString = "            <LIBRARY_NAME>" + limsInfo.libraryName + "</LIBRARY_NAME>"
+      xmlString = "            <LIBRARY_NAME>" + experimentData.libraryName + "</LIBRARY_NAME>"
       SampleXMLCreator.writeLine(writer, xmlString)
-      xmlString = "            <LIBRARY_STRATEGY>" + limsInfo.libraryStrategy + "</LIBRARY_STRATEGY>"
+      xmlString = "            <LIBRARY_STRATEGY>" + experimentData.libraryStrategy + "</LIBRARY_STRATEGY>"
       SampleXMLCreator.writeLine(writer, xmlString)
-      xmlString = "            <LIBRARY_SOURCE>" + limsInfo.librarySource + "</LIBRARY_SOURCE>"
+      xmlString = "            <LIBRARY_SOURCE>" + experimentData.librarySource + "</LIBRARY_SOURCE>"
       SampleXMLCreator.writeLine(writer, xmlString)
-      xmlString = "            <LIBRARY_SELECTION>" + limsInfo.librarySelection + "</LIBRARY_SELECTION>"
+      xmlString = "            <LIBRARY_SELECTION>" + experimentData.librarySelection + "</LIBRARY_SELECTION>"
       SampleXMLCreator.writeLine(writer, xmlString)
       xmlString = "            <LIBRARY_LAYOUT>"
       SampleXMLCreator.writeLine(writer, xmlString)
-      xmlString = "               <PAIRED NOMINAL_LENGTH=\"" + SampleFileDAO.getNominalLengthFromLibraryName(limsInfo.libraryName) + "\" />"
+      xmlString = "               <PAIRED NOMINAL_LENGTH=\"" + experimentData.nominalLength + "\" />"
       SampleXMLCreator.writeLine(writer, xmlString)
       xmlString = "            </LIBRARY_LAYOUT>"
       SampleXMLCreator.writeLine(writer, xmlString)

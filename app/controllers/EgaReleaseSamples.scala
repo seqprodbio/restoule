@@ -54,7 +54,7 @@ object EgaReleaseSamples extends Controller {
 
             for (sampleFileId <- sampleFileIds) {
                var sampleFileType = SampleFileDAO.getFileTypeFromId(sampleFileId)(rs.dbSession)
-               if (isValidFileType(validFileTypes, sampleFileType)) {
+               if (isValidFileType(validFileTypes, sampleFileType) && SampleFileDAO.isDataFile(SampleFileDAO.getSampleFileFromId(sampleFileId)(rs.dbSession).fileName)) {
                   if (SampleFileDAO.isSampleFileCompleteFromId(sampleFileId)(rs.dbSession) && (completenessOfSamples.equals("all") || completenessOfSamples.equals("complete"))) {
                      sampleFiles += SampleFileDAO.getSampleFileFromId(sampleFileId)(rs.dbSession)
                   } else if (!SampleFileDAO.isSampleFileCompleteFromId(sampleFileId)(rs.dbSession) && (completenessOfSamples.equals("all") || completenessOfSamples.equals("incomplete"))) {
