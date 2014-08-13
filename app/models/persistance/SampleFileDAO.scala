@@ -295,6 +295,21 @@ object SampleFileDAO {
       return library
    }
 
+   def getNominalLengthFromLibraryName(name: String): Int = {
+      val libraryRegex = libraryRegexString.r
+      var nominalLength = 0
+
+      if (libraryRegex.findFirstMatchIn(name).isDefined) {
+         var dataMatch = libraryRegex.findFirstMatchIn(name).get
+         try {
+            nominalLength = dataMatch.group(6).toInt
+         } catch {
+            case e: Exception => nominalLength = 0
+         }
+      }
+      nominalLength
+   }
+
    def getLibraryEndingFromId(id: Int) = { implicit session: Session =>
       var library = getSampleFileFromId(id)(session).library
       library.substring(library.length - 2)
@@ -341,7 +356,7 @@ object SampleFileDAO {
 
    def isSampleFileComplete(sampleFile: SampleFile) = { implicit session: Session =>
       var libraryEnd = getLibraryEndingFromId(sampleFile.id.get)(session)
-      if (!sampleFile.fileName.equals("") && sampleFile.sampleLimsInfoId.isDefined && (libraryEnd.equals("WG") || libraryEnd.equals("EX") || SampleLIMSInfoDAO.isComplete(sampleFile.sampleLimsInfoId.get)(session)) && doesNameMatchRegex(sampleFile.fileName)) {
+      if (!sampleFile.fileName.equals("") && sampleFile.sampleLimsInfoId.isDefined && (libraryEnd.equals("WG") || libraryEnd.equals("EX") || SampleLIMSInfoDAO.isComplete(sampleFile.sampleLimsInfoId.get)(session)) && doesNameMatchRegex(sampleFile.fileName) && getNominalLengthFromLibraryName(sampleFile.library) != 0) {
          true
       } else {
          false

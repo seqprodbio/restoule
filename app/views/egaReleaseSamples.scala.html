@@ -217,6 +217,7 @@
                     <td></td>
                     <td></td>
                     <td></td>
+                    <td></td>
                     <td colspan="5" class="headerCell">LIMS</td>
                 </tr>
                 <tr>
@@ -225,6 +226,7 @@
                     <td class="headerCell">&nbspFS&nbsp</td>
                     <td class="headerCell">&nbspRun&nbsp</td>
                     <td class="headerCell">&nbspRun Date&nbsp</td>
+                    <td class="headerCell">&nbspNominal Length&nbsp</td>
                     <td class="headerCell">&nbspDonor&nbsp</td>
                     <td class="headerCell">&nbspLibrary Name&nbsp</td>
                     <td class="headerCell">&nbspLibrary Strategy&nbsp</td>
@@ -244,6 +246,7 @@
                                 <td class="@getSampleFileContentCellClass(sampleFile)">@localOrFTP(sampleFile.origin)</td>
                                 <td class="@getSampleFileContentCellClass(sampleFile)">&nbsp@(sampleFile.sequencerRunName)&nbsp</td>
                                 <td class="@getSampleFileContentCellClass(sampleFile)">&nbsp@(SampleFileDAO.getSequencerRunDateString(sampleFile.id.get)(dbSession))&nbsp</td>
+                                <td class="@getSampleFileContentCellClass(sampleFile)">&nbsp@(SampleFileDAO.getNominalLengthFromLibraryName(sampleFile.library))&nbsp</td>
                                 <td class="@getSampleFileContentCellClass(sampleFile)">&nbsp@(SampleFileDAO.getDonor(sampleFile.id.get)(dbSession))&nbsp</td>
                                 <td class="@getSampleFileContentCellClass(sampleFile)">&nbsp@(SampleFileDAO.getLibraryName(sampleFile.id.get)(dbSession))&nbsp</td>
                                 <td class="@getSampleFileContentCellClass(sampleFile)">&nbsp@(SampleFileDAO.getLibraryStrategy(sampleFile.id.get)(dbSession))&nbsp</td>
@@ -263,10 +266,12 @@
                             <td class="incompleteContentCell">&nbsp&nbsp</td>
                             <td class="incompleteContentCell">&nbsp&nbsp</td>
                             <td class="incompleteContentCell">&nbsp&nbsp</td>
+                            <td class="incompleteContentCell">&nbsp&nbsp</td>
                         </tr>
                     }
                 }
                 <tr>
+                    <td class="bottomCell"></td>
                     <td class="bottomCell"></td>
                     <td class="bottomCell"></td>
                     <td class="bottomCell"></td>

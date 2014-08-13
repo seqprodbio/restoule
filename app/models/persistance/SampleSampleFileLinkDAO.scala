@@ -24,6 +24,11 @@ object SampleSampleFileLinkDAO {
       sampleSampleFileLinks.filter(s => s.sampleId === sampleId).map(s => s.sampleFileId).list
    }
 
+   def getSampleIdsFromFileName(sampleFileName: String) = { implicit session: Session =>
+      val sampleFileId = SampleFileDAO.getIdFromSampleFileName(sampleFileName)(session)
+      sampleSampleFileLinks.filter(s => s.sampleFileId === sampleFileId).map(s => s.sampleId).list
+   }
+
    def createLink(sampleName: String, sampleFileName: String) = { implicit session: Session =>
       val sampleId = SampleDAO.getIdFromSampleName(sampleName)(session)
       val sampleFileId = SampleFileDAO.getIdFromSampleFileName(sampleFileName)(session)
