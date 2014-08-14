@@ -1,4 +1,4 @@
-@(releaseName: String, fileName: String, generatedXMLs : Array[String], allSamplesComplete : Boolean)
+@(releaseName: String, fileName: String, generatedXMLs : Array[String])
 
 <!DOCTYPE html>
 <head>
@@ -34,11 +34,14 @@
     </script>
 </head>
 <body>
-    <h2>Submit XML</h2>
-    <br>
-    @for(xmlName <- generatedXMLs){
-        <p class="XMLName">&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp@(xmlName)</p>
-    }
+    <h2 style="margin-left:10px">Submit XML</h2>
+    <p></p>
+    <p style="margin-left:20px">Generated XMLs:</p>
+    <div style="margin-left:30px">
+        @for(xmlName <- generatedXMLs){
+            <a href="@routes.Assets.at("/public/GeneratedXMLs", releaseName + "/" + xmlName)">@(xmlName)</a><br>
+        }
+    </div>
     <br><br><br>
     <form action="@routes.XMLSubmission.processServerSubmission" method="POST" id="submissionForm">
         <div class="submitButton" id="submitToTestServer" style="text-align:center" onclick="clickedButton('testServer')">
@@ -46,23 +49,7 @@
         </div>
         <br>
         <div>
-            @if(allSamplesComplete && fileName.equals("all")){
-                <div class="submitButton" id="submitReleaseDiv" style="text-align:center;float:left" onclick="clickedButton('realServer')">
-            } else {
-                <div class="submitButton" id="submitReleaseDiv" style="text-align:center;float:left;background-color:#C0C0C0">
-            }
-                Submit Release
-        </div>
-        @if(!allSamplesComplete){
-            <p class="errorMessage" id="onlyMessage">There are incomplete samples in this release!</p>
-        } else {
-            @if(!fileName.equals("all")){
-                <p class="errorMessage" id="topMessage">Not all of the files in this release have been submitted.</p>
-                <br>
-                <br>
-                <p class="errorMessage" style="margin-top:5px">(To fix this, select the "all" tab on the egaReleaseSamples page before generating the XMLs)</p>
-            }
-        }
+        <div class="submitButton" id="submitReleaseDiv" style="text-align:center;float:left" onclick="clickedButton('realServer')"> Submit Release </div>
         <input type="hidden" id="selectedButton" name = "selectedButton" value="testServer">
     </form>
 </body>

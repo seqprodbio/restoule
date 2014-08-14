@@ -66,7 +66,7 @@ object XMLGeneration extends Controller {
       var fileId = 0
       var fileName = ""
       var validSampleNames = ArrayBuffer[String]()
-      var directoryPath = Paths.get("./GeneratedXMLs/" + releaseName)
+      var directoryPath = Paths.get("./public/GeneratedXMLs/" + releaseName)
       var validSampleBuffer = ListBuffer[Sample]()
       var validSampleFiles = ArrayBuffer[SampleFile]()
       var validSampleNamesAndFileTypes = getValidSampleNamesAndTypes(fileId, fileName, releaseId, releaseName)(rs.dbSession)

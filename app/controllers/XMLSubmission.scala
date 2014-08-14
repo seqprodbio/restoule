@@ -28,8 +28,9 @@ object XMLSubmission extends Controller {
          } else {
             fileName = "all"
          }
-         var generatedXMLs: Array[String] = getArrayOfGeneratedXMLS(releaseName, fileName)(rs.dbSession)
-         Ok(views.html.xmlSubmissionPage(releaseName, fileName, generatedXMLs, areAllSamplesComplete(releaseName)(rs.dbSession)))
+         //Might want to replace this in the future by actually checking what's in the directory
+         var generatedXMLs: Array[String] = Array("sample.xml", "experiment.xml", "run.xml", "")
+         Ok(views.html.xmlSubmissionPage(releaseName, fileName, generatedXMLs))
       } else {
          Redirect(routes.EgaReleases.viewEgaReleases)
       }
@@ -51,34 +52,5 @@ object XMLSubmission extends Controller {
 
    def viewSubmittedPage() = Action { implicit request =>
       Ok(views.html.xmlSubmittedPage())
-   }
-
-   def getArrayOfGeneratedXMLS(releaseName: String, fileName: String) = { implicit dbSession: play.api.db.slick.Session =>
-      var xmlNames = new ArrayBuffer[String]()
-      if (!fileName.equals("all")) {
-         for (sample <- TSVFileSampleLinkDAO.getAllSamplesInTSVFile(fileName, releaseName)(dbSession)) {
-            xmlNames += sample.name + ".xml"
-         }
-      } else {
-         var releaseId = ReleaseDAO.getReleaseIdFromName(releaseName)(dbSession)
-         var fileIds = ReleaseTSVFileLinkDAO.getFileIdsFromReleaseId(releaseId)(dbSession)
-         for (fileId <- fileIds) {
-            var tempFileName = TSVFileDAO.getFileNameFromId(fileId)(dbSession)
-            for (sample <- TSVFileSampleLinkDAO.getAllSamplesInTSVFile(tempFileName, releaseName)(dbSession)) {
-               xmlNames += sample.name + ".xml"
-            }
-         }
-      }
-      xmlNames.toArray
-   }
-
-   def areAllSamplesComplete(releaseName: String) = { implicit session: play.api.db.slick.Session =>
-      var returnValue = true
-      for (sample <- EgaReleaseSamples.getSamplesFromAllFiles(TSVFileDAO.getTSVFileNamesFromReleaseName(releaseName)(session), releaseName, "all")(session).keys) {
-         if (!SampleDAO.hasCompleteSampleFile(sample)(session)) {
-            returnValue = false
-         }
-      }
-      returnValue
    }
 }
