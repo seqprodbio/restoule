@@ -316,7 +316,11 @@ object SampleFileDAO {
 
    def getLibraryEndingFromId(id: Int) = { implicit session: Session =>
       var library = getSampleFileFromId(id)(session).library
-      library.substring(library.length - 2)
+      if(library != null && library.length >= 2) {
+        library.substring(library.length - 2)
+      } else {
+        ""
+      }
    }
 
    def getSequencerRunDateString(id: Int) = { implicit session: Session =>
