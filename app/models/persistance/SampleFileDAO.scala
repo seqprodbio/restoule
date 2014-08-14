@@ -89,7 +89,10 @@ object SampleFileDAO {
    def getFileTypeFromId(id: Int) = { implicit session: Session =>
       var fileName = sampleFiles.filter(s => s.id === id).map(s => s.fileName).first
       val regex = "^(.+?)\\.(bam|fastq\\.gz)\\.(gpg\\.md5|gpg|md5)$".r
-      regex.findFirstMatchIn(fileName).get.group(2)
+      regex.findFirstMatchIn(fileName) match {
+        case Some(t) => t.group(2)
+        case None => ""
+      }
    }
 
    def getAddedFileTypeFromId(id: Int) = { implicit session: Session =>
