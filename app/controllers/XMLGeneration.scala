@@ -244,10 +244,14 @@ object XMLGeneration extends Controller {
             if (!checksumFile.origin.equals("local")) {
                val ftpCredentials = FTPCredentialsDAO.getFTPCredentialsFromSite(checksumFile.origin)(session)
                checksum = FileRetrival.getFileContentsFromFTP(ftpCredentials.ftpSite, ftpCredentials.userName, ftpCredentials.password, checksumPath).trim
+            } else {
+               checksum = FileRetrival.getFileContentsFromLocal(checksumPath).trim
             }
             if (!encryptedChecksumFile.origin.equals("local")) {
                val ftpCredentials = FTPCredentialsDAO.getFTPCredentialsFromSite(encryptedChecksumFile.origin)(session)
                encryptedChecksum = FileRetrival.getFileContentsFromFTP(ftpCredentials.ftpSite, ftpCredentials.userName, ftpCredentials.password, encryptedChecksumPath).trim
+            } else {
+               encryptedChecksum = FileRetrival.getFileContentsFromLocal(encryptedChecksumPath).trim
             }
 
             var fileData = new SampleFileData(sampleFile.path, originalFileType, "MD5", checksum, encryptedChecksum)
