@@ -33,3 +33,4 @@ POST    /loadingFiles               controllers.ViewFiles.updateFiles
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)
+GET     /xmls/*file                 controllers.Assets.at(path="/public/GeneratedXMLs", file)

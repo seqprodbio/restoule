@@ -1,6 +1,5 @@
 package models.XMLCreators
 
-import play.api.db.slick.Session
 import java.nio.file._
 import java.io.IOException
 import java.io.BufferedWriter
