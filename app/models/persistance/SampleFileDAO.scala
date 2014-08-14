@@ -332,7 +332,10 @@ object SampleFileDAO {
    def getSequencerRunDateString(id: Int) = { implicit session: Session =>
       var sampleFile = getSampleFileFromId(id)(session)
       var dateNum = sampleFile.sequencerRunDate
-      var date = "20" + dateNum.substring(0, 2) + "-" + dateNum.substring(2, 4) + "-" + dateNum.substring(4, 6) + "T00:00:00"
+      var date = ""
+      if(dateNum != null && dateNum.length > 4) {
+        date = "20" + dateNum.substring(0, 2) + "-" + dateNum.substring(2, 4) + "-" + dateNum.substring(4, 6) + "T00:00:00"
+      }
       date
    }
 
@@ -374,7 +377,13 @@ object SampleFileDAO {
 
    def isSampleFileComplete(sampleFile: SampleFile) = { implicit session: Session =>
       var libraryEnd = getLibraryEndingFromId(sampleFile.id.get)(session)
-      if (!sampleFile.fileName.equals("") && sampleFile.sampleLimsInfoId.isDefined && (libraryEnd.equals("WG") || libraryEnd.equals("EX") || SampleLIMSInfoDAO.isComplete(sampleFile.sampleLimsInfoId.get)(session)) && doesNameMatchRegex(sampleFile.fileName) && getNominalLengthFromLibraryName(sampleFile.library) != 0 && !getMD5Path(sampleFile.id.get)(session).equals("") && !getGPGMD5Path(sampleFile.id.get)(session).equals("")) {
+      if (!sampleFile.fileName.equals("") && 
+          sampleFile.sampleLimsInfoId.isDefined && 
+          (libraryEnd.equals("WG") || libraryEnd.equals("EX") || SampleLIMSInfoDAO.isComplete(sampleFile.sampleLimsInfoId.get)(session)) && doesNameMatchRegex(sampleFile.fileName) &&
+          getNominalLengthFromLibraryName(sampleFile.library) != 0 &&
+          !getMD5Path(sampleFile.id.get)(session).equals("") &&
+          !getGPGMD5Path(sampleFile.id.get)(session).equals("") &&
+          !getSequencerRunDateString(sampleFile.id.get)(session).equals("")) {
          true
       } else {
          false
