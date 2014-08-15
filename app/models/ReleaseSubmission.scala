@@ -25,8 +25,7 @@ object ReleaseSubmission {
    case class AccessionInformation(resourceType: String, alias: String, accession: String)
 
    def validate(directoryPath: Path, releaseName: String) = { implicit session: play.api.db.slick.Session =>
-      //TODO: Change this (it only works for the first submission of any release)
-      var submissionAlias = releaseName + "1"
+      var submissionAlias = getSubmissionAlias(releaseName)(session)
       //TODO: Change this so the url doesn't have to be hardcoded in
       validateOnServer("", directoryPath, List("sample.xml", "experiment.xml", "run.xml"), submissionAlias, releaseName)
    }
@@ -39,8 +38,7 @@ object ReleaseSubmission {
    def submitDataset(directoryPath: Path, releaseName: String, runs: List[RunReferenceData]) = { implicit session: play.api.db.slick.Session =>
       //TODO: Change this so it doesn't have to be hardcoded in
       var server = ""
-      //TODO: Change this (it only works for the first submission of any release)
-      var submissionAlias = releaseName + "1"
+      var submissionAlias = getSubmissionAlias(releaseName)(session)
       var datasetAlias = releaseName
       DatasetXMLCreator.createDatasetXML(directoryPath, new DatasetXMLData(datasetAlias, runs))
       var response = validateOnServer(server, directoryPath, List("sample.xml", "experiment.xml", "run.xml"), submissionAlias, releaseName)
@@ -65,8 +63,7 @@ object ReleaseSubmission {
    }
 
    def submitToServer(server: String, directoryPath: Path, releaseName: String) = { implicit session: play.api.db.slick.Session =>
-      //TODO: Change this (it only works for the first submission of any release)
-      var submissionAlias = releaseName + "1"
+      var submissionAlias = getSubmissionAlias(releaseName)(session)
       var response = validateOnServer(server, directoryPath, List("sample.xml", "experiment.xml", "run.xml"), submissionAlias, releaseName)
       println("Attempted to validate files, response is: \n\n" + response)
       if (isValid(response)) {
@@ -110,6 +107,20 @@ object ReleaseSubmission {
          }
       }
       return responseString
+   }
+
+   //This function exists because you need a unique alias for each submission so we have to get a name that hasn't been used before
+   def getSubmissionAlias(releaseName: String) = { implicit session: play.api.db.slick.Session =>
+      var submissionName = releaseName + "_1"
+      var getNumRegex = ".*_([0-9)*)".r
+      while (EGAAccessionDAO.existsWithName(submissionName)(session)) {
+         var numberAtEnd = 0
+         //This is guaranteed exists since we set the submissionName above to follow this pattern
+         var numString = getNumRegex.findFirstMatchIn(submissionName).get.group(1)
+         numberAtEnd = numString.toInt
+         submissionName = releaseName + "_" + (numberAtEnd + 1)
+      }
+      submissionName
    }
 
    def isValid(response: String): Boolean = {

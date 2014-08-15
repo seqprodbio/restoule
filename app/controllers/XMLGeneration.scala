@@ -14,6 +14,7 @@ import models.persistance.SampleDAO
 import models.persistance.ReleaseDAO
 import models.persistance.TSVFileDAO
 import models.persistance.SampleFileDAO
+import models.persistance.EGAAccessionDAO
 import models.persistance.SampleLIMSInfoDAO
 import models.persistance.FTPCredentialsDAO
 import models.persistance.TSVFileSampleLinkDAO
@@ -21,6 +22,7 @@ import models.persistance.ReleaseTSVFileLinkDAO
 import models.persistance.SampleSampleFileLinkDAO
 import models.XMLCreators.RunXMLData
 import models.XMLCreators.RunXMLCreator
+import models.XMLCreators.SampleXMLData
 import models.XMLCreators.SampleFileData
 import models.XMLCreators.SampleXMLCreator
 import models.XMLCreators.ExperimentXMLData
@@ -83,12 +85,13 @@ object XMLGeneration extends Controller {
 
       validSampleFiles ++= getSampleFilesFromSamplesAndValidTypes(validSampleNamesAndFileTypes)(rs.dbSession)
 
+      var sampleData = getSampleXMLData(validSampleBuffer.toList)(rs.dbSession)
       var experimentData = getExperimentXMLData(validSampleFiles.toArray, validSampleNames.toArray)(rs.dbSession)
       var runData: List[RunXMLData] = getRunXMLData(validSampleFiles)(rs.dbSession)
 
       createXMLDirectory(directoryPath)
 
-      SampleXMLCreator.createSampleXML(directoryPath, validSampleBuffer.toList)(rs.dbSession)
+      SampleXMLCreator.createSampleXML(directoryPath, sampleData)
       ExperimentXMLCreator.createExperimentXML(directoryPath, experimentData)
       RunXMLCreator.createRunXML(directoryPath, runData)
 
@@ -169,6 +172,39 @@ object XMLGeneration extends Controller {
       valid
    }
 
+   def getSampleXMLData(validSamples: List[Sample]) = { implicit session: play.api.db.slick.Session =>
+      var sampleXMLData = new ListBuffer[SampleXMLData]()
+      for (sample <- validSamples) {
+         val sampleFileIds = SampleSampleFileLinkDAO.getFileIdsFromSampleName(sample.name)(session)
+         //I'm assuming that the donor is the same for all of the files tied to this sample 
+         //Maybe we want to check this?
+         val sampleLIMSInfoId = getFirstValidSampleFileLIMSInfoId(sampleFileIds)(session)
+         if (sampleLIMSInfoId == 0) {
+            println("ERROR: Sample " + sample + "is on the list of valid samples without a complete sample file!")
+         }
+         val donorId = SampleLIMSInfoDAO.getSampleLimsInfoById(sampleLIMSInfoId)(session).get.donor
+         val sampleName = sample.name
+         if (!EGAAccessionDAO.existsWithName(sampleName)(session)) {
+            sampleXMLData += new SampleXMLData(sampleName, donorId)
+         } else {
+            println("There already exists a previously submitted sample with alias: " + sampleName)
+         }
+      }
+      sampleXMLData.toList
+   }
+
+   //This works, assuming all sample files attached to a sample have the same donor
+   //Otherwise, you need to check if it's a valid sample file (if it's file type has been selected to be in the release)
+   def getFirstValidSampleFileLIMSInfoId(sampleFileIds: List[Int]) = { implicit session: play.api.db.slick.Session =>
+      var sampleFileLIMSInfoId = 0
+      for (sampleFileId <- sampleFileIds) {
+         if (SampleFileDAO.isSampleFileCompleteFromId(sampleFileId)(session)) {
+            sampleFileLIMSInfoId = SampleFileDAO.getSampleFileFromId(sampleFileId)(session).sampleLimsInfoId.get
+         }
+      }
+      sampleFileLIMSInfoId
+   }
+
    def getExperimentXMLData(validSampleFiles: Array[SampleFile], validSampleNames: Array[String]) = { implicit session: play.api.db.slick.Session =>
       var experimentXMLData = new ListBuffer[ExperimentXMLData]()
       for (sampleFile <- validSampleFiles) {
@@ -207,8 +243,10 @@ object XMLGeneration extends Controller {
                libraryExists = true
             }
          }
-         if (!libraryExists) {
+         if (!libraryExists && !EGAAccessionDAO.existsWithName(libraryName)(session)) {
             experimentXMLData += new ExperimentXMLData(libraryName, parentSampleName, libraryStrategy, librarySource, librarySelection, nominalLength)
+         } else if (EGAAccessionDAO.existsWithName(libraryName)(session)) {
+            println("There already exists a previously submitted experiment with alias: " + libraryName)
          }
       }
       experimentXMLData.toList
@@ -271,8 +309,10 @@ object XMLGeneration extends Controller {
                   runDataWithAliasExists = true
                }
             }
-            if (!runDataWithAliasExists) {
+            if (!runDataWithAliasExists && !EGAAccessionDAO.existsWithName(fileAlias)(session)) {
                runXMLData += new RunXMLData(fileAlias, SampleFileDAO.getSequencerRunDateString(sampleFile.id.get)(session), sampleFile.library, List(fileData))
+            } else if (EGAAccessionDAO.existsWithName(fileAlias)(session)) {
+               println("There already exists a previously submitted run with alias: " + fileAlias)
             }
          }
       }

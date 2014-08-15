@@ -41,4 +41,8 @@ object EGAAccessionDAO {
       val newAccession = new EGAAccession(None, resourceType, accession, refname, releaseName, new java.sql.Timestamp(System.currentTimeMillis()))
       egaAccessions.insert(newAccession)
    }
+
+   def existsWithName(name: String) = { implicit session: Session =>
+      egaAccessions.filter(a => a.refname.equals(name)).firstOption.isDefined
+   }
 }
