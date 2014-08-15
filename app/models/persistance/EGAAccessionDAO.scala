@@ -33,8 +33,12 @@ object EGAAccessionDAO {
       egaAccessions.filter(a => a.refname.equals(name)).firstOption
    }
 
-   def createAccession(resourceType: String, refname: String, accession: String) = { implicit session: Session =>
-      val newAccession = new EGAAccession(None, resourceType, accession, refname, new java.sql.Timestamp(System.currentTimeMillis()))
+   def getSubmittedRunsFromRelease(releaseName: String) = { implicit session: Session =>
+      egaAccessions.filter(a => a.releaseName.equals(releaseName) && a.resourceType.equals("run")).list
+   }
+
+   def createAccession(resourceType: String, refname: String, accession: String, releaseName: String) = { implicit session: Session =>
+      val newAccession = new EGAAccession(None, resourceType, accession, refname, releaseName, new java.sql.Timestamp(System.currentTimeMillis()))
       egaAccessions.insert(newAccession)
    }
 }
