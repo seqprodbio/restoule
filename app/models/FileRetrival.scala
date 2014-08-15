@@ -29,7 +29,6 @@ object FileRetrival {
    }
 
    def getFileContentsFromFTP(ftpSite: String, userName: String, password: String, filePath: String): String = {
-      var filePaths: ListBuffer[String] = new ListBuffer[String]()
       try {
          val authenticator: StaticUserAuthenticator = new StaticUserAuthenticator(ftpSite, userName, password)
          val opts: FileSystemOptions = new FileSystemOptions()
@@ -56,6 +55,18 @@ object FileRetrival {
             println("Error when attempting to access directory at: " + dirPath)
             println(ex)
             return new ListBuffer[String]().toList
+         }
+      }
+   }
+
+   def getFileContentsFromLocal(dirPath: String): String = {
+      try {
+         var fileObj = VFS.getManager().resolveFile("file://" + dirPath)
+         val inputStream = fileObj.getContent().getInputStream()
+         return Source.fromInputStream(inputStream).mkString
+      } catch {
+         case ex: FileSystemException => {
+            return ""
          }
       }
    }

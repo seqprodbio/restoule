@@ -44,12 +44,21 @@
     </div>
     <br><br><br>
     <form action="@routes.XMLSubmission.processServerSubmission" method="POST" id="submissionForm">
-        <div class="submitButton" id="submitToTestServer" style="text-align:center" onclick="clickedButton('testServer')">
-            Submit To Test Server
+        <div class="submitButton" id="validate" style="text-align:center" onclick="clickedButton('validate')">
+            Validate
         </div>
         <br>
-        <div>
-        <div class="submitButton" id="submitReleaseDiv" style="text-align:center;float:left" onclick="clickedButton('realServer')"> Submit Release </div>
+        <div class="submitButton" id="submitReleaseDiv" style="text-align:center;float:left" onclick="clickedButton('realServer')">
+            Submit Release 
+        </div>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>    
+        <div class="submitButton" id="submitDataset" style="text-align:center;float:left" onclick="clickedButton('dataset')">
+            Submit Dataset 
+        </div>
         <input type="hidden" id="selectedButton" name = "selectedButton" value="testServer">
     </form>
 </body>

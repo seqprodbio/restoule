@@ -8,11 +8,16 @@ import play.api.data.Forms._
 import scala.collection.mutable.ArrayBuilder
 import scala.collection.mutable.ArrayBuffer
 import models.Sample
+import models.ReleaseSubmission
+import models.persistance.SampleDAO
 import models.persistance.ReleaseDAO
 import models.persistance.TSVFileDAO
-import models.persistance.SampleDAO
+import models.persistance.EGAAccessionDAO
 import models.persistance.TSVFileSampleLinkDAO
 import models.persistance.ReleaseTSVFileLinkDAO
+import java.nio.file.Paths
+import scala.collection.mutable.ListBuffer
+import models.XMLCreators.RunReferenceData
 
 object XMLSubmission extends Controller {
 
@@ -36,21 +41,39 @@ object XMLSubmission extends Controller {
       }
    }
 
-   def processServerSubmission() = Action { implicit request =>
+   def processServerSubmission() = DBAction { implicit rs =>
       submissionForm.bindFromRequest().fold(
          formHasErrors => Ok("The form had errors. These are the errors: " + formHasErrors),
          success => {
-            if (success.equals("testServer")) {
-               //Submit to test server code goes here
-               Redirect(routes.XMLSubmission.viewSubmittedPage).withSession(request.session + ("serverSubmittedTo" -> "testServer"))
+            if (rs.request.session.get("releaseName").isDefined && ReleaseDAO.releaseNameExists(rs.request.session.get("releaseName").get)(rs.dbSession)) {
+               val releaseName = rs.request.session.get("releaseName").get
+               if (success.equals("validate")) {
+                  println(ReleaseSubmission.validate(Paths.get("./public/GeneratedXMLs/" + releaseName), releaseName)(rs.dbSession))
+                  Redirect(routes.XMLSubmission.viewSubmittedPage).withSession(rs.request.session + ("serverSubmittedTo" -> "validation"))
+               } else if (success.equals("realServer")) {
+                  println(ReleaseSubmission.submitToRealServer(Paths.get("./public/GeneratedXMLs/" + releaseName), releaseName)(rs.dbSession))
+                  Redirect(routes.XMLSubmission.viewSubmittedPage).withSession(rs.request.session + ("serverSubmittedTo" -> "realServer"))
+               } else {
+                  var runs = getSubmittedRunReferenceDataFromRelease(releaseName)(rs.dbSession)
+                  println(ReleaseSubmission.submitDataset(Paths.get("./public/GeneratedXMLs/" + releaseName), releaseName, runs)(rs.dbSession))
+                  Redirect(routes.XMLSubmission.viewSubmittedPage).withSession(rs.request.session + ("serverSubmittedTo" -> "dataset submission"))
+               }
             } else {
-               //Submit to real server code goes here
-               Redirect(routes.XMLSubmission.viewSubmittedPage).withSession(request.session + ("serverSubmittedTo" -> "realServer"))
+               Redirect(routes.EgaReleases.viewEgaReleases)
             }
          })
    }
 
    def viewSubmittedPage() = Action { implicit request =>
       Ok(views.html.xmlSubmittedPage())
+   }
+
+   def getSubmittedRunReferenceDataFromRelease(releaseName: String) = { implicit session: play.api.db.slick.Session =>
+      var runs = EGAAccessionDAO.getSubmittedRunsFromRelease(releaseName)(session)
+      var runReferences = new ListBuffer[RunReferenceData]()
+      for (run <- runs) {
+         runReferences += new RunReferenceData(run.accession, run.refname)
+      }
+      runReferences.toList
    }
 }

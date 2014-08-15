@@ -3,7 +3,7 @@
 
 # --- !Ups
 
-create table "ega_accession" ("id" SERIAL NOT NULL PRIMARY KEY,"resource_type" VARCHAR(254) NOT NULL,"accession" VARCHAR(254) NOT NULL,"refname" VARCHAR(254) NOT NULL,"created_tmstp" TIMESTAMP NOT NULL);
+create table "ega_accession" ("id" SERIAL NOT NULL PRIMARY KEY,"resource_type" VARCHAR(254) NOT NULL,"accession" VARCHAR(254) NOT NULL,"refname" VARCHAR(254) NOT NULL,"release_name" VARCHAR(254) NOT NULL,"created_tmstp" TIMESTAMP NOT NULL);
 create table "ftp_credentials" ("id" SERIAL NOT NULL PRIMARY KEY,"ftp_site" VARCHAR(254) NOT NULL,"username" VARCHAR(254) NOT NULL,"password" VARCHAR(254) NOT NULL,"created_tstmp" TIMESTAMP NOT NULL);
 create table "local_dir" ("id" SERIAL NOT NULL PRIMARY KEY,"path" VARCHAR(254) NOT NULL,"created_tstmp" TIMESTAMP NOT NULL);
 create table "pref_header" ("id" SERIAL NOT NULL PRIMARY KEY,"user_id" INTEGER NOT NULL,"name" VARCHAR(254) NOT NULL,"created_tstmp" TIMESTAMP NOT NULL);
