@@ -271,7 +271,7 @@ object XMLGeneration extends Controller {
             val checksumFile = SampleFileDAO.getSampleFileFromPath(checksumPath)(session)
             var checksum: String = ""
             val encryptedChecksumPath = SampleFileDAO.getGPGMD5Path(sampleFile.id.get)(session)
-            val encryptedChecksumFile = SampleFileDAO.getSampleFileFromPath(checksumPath)(session)
+            val encryptedChecksumFile = SampleFileDAO.getSampleFileFromPath(encryptedChecksumPath)(session)
             var encryptedChecksum: String = ""
             var originalFileType = SampleFileDAO.getFileTypeFromId(sampleFile.id.get)(session)
 
