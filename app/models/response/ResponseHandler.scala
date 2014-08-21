@@ -9,7 +9,8 @@ object ResponseHandler {
    */
   def responseAccessions(response: String): RestouleResponse = {
     var accessions: List[Accession] = List()
-    var restouleResponse = RestouleResponse(false, accessions)
+    var errors: List[String] = List()
+    var restouleResponse = RestouleResponse(false, accessions, errors)
     val xml = XML.loadString(response)
     val success = (xml \\ "RECEIPT" \ "@success").toString()
 
@@ -17,7 +18,10 @@ object ResponseHandler {
       (xml \\ "RUN").foreach { xml => accessions = accessions :+ RunAccession((xml \ "@alias").toString(), (xml \ "@accession").toString()) }
       (xml \\ "SAMPLE").foreach { xml => accessions = accessions :+ SampleAccession((xml \ "@alias").toString(), (xml \ "@accession").toString()) }
       (xml \\ "EXPERIMENT").foreach { xml => accessions = accessions :+ ExperimentAccession((xml \ "@alias").toString(), (xml \ "@accession").toString()) }
-      restouleResponse = RestouleResponse(true, accessions)
+      restouleResponse = RestouleResponse(true, accessions, errors)
+    } else {
+      (xml \\ "ERROR").foreach{ xml => errors = errors :+ xml.text}
+      restouleResponse = RestouleResponse(false, accessions, errors)
     }
     restouleResponse
   }
@@ -33,4 +37,4 @@ case class SampleAccession(alias: String, accession: String) extends Accession
 case class ExperimentAccession(alias: String, accession: String) extends Accession
 case class RunAccession(alias: String, accession: String) extends Accession
 
-case class RestouleResponse(success: Boolean, studyAbstract: Seq[Accession])
+case class RestouleResponse(success: Boolean, studyAbstract: Seq[Accession], errors: List[String])

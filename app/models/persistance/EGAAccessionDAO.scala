@@ -7,42 +7,47 @@ import play.api.db.slick.Config.driver.simple._
 
 object EGAAccessionDAO {
 
-   val egaAccessions = TableQuery[EGAAccessionTable]
+  val egaAccessions = TableQuery[EGAAccessionTable]
 
-   def getAllAccessions() = { implicit session: Session =>
-      egaAccessions.list
-   }
+  def getAllAccessions() = { implicit session: Session =>
+    egaAccessions.list
+  }
 
-   def getAllSampleAccessions() = { implicit session: Session =>
-      egaAccessions.filter(a => a.resourceType.equals("sample")).list
-   }
+  def getAllSampleAccessions() = { implicit session: Session =>
+    egaAccessions.filter(a => a.resourceType.equals("sample")).list
+  }
 
-   def getAllExperimentAccessions() = { implicit session: Session =>
-      egaAccessions.filter(a => a.resourceType.equals("experiment")).list
-   }
+  def getAllExperimentAccessions() = { implicit session: Session =>
+    egaAccessions.filter(a => a.resourceType.equals("experiment")).list
+  }
 
-   def getAllRunAccessions() = { implicit session: Session =>
-      egaAccessions.filter(a => a.resourceType.equals("run")).list
-   }
+  def getAllRunAccessions() = { implicit session: Session =>
+    egaAccessions.filter(a => a.resourceType.equals("run")).list
+  }
 
-   def getAccessionById(id: Int) = { implicit session: Session =>
-      egaAccessions.filter(a => a.id === id).firstOption
-   }
+  def getAccessionById(id: Int) = { implicit session: Session =>
+    egaAccessions.filter(a => a.id === id).firstOption
+  }
 
-   def getAccessionByName(name: String) = { implicit session: Session =>
-      egaAccessions.filter(a => a.refname.equals(name)).firstOption
-   }
+  def getAccessionByName(name: String) = { implicit session: Session =>
+    egaAccessions.filter(a => a.refname.equals(name)).firstOption
+  }
 
-   def getSubmittedRunsFromRelease(releaseName: String) = { implicit session: Session =>
-      egaAccessions.filter(a => a.releaseName.equals(releaseName) && a.resourceType.equals("run")).list
-   }
+  def getSubmittedRunsFromRelease(releaseName: String) = { implicit session: Session =>
+    egaAccessions.filter(a => a.releaseName.equals(releaseName) && a.resourceType.equals("run")).list
+  }
 
-   def createAccession(resourceType: String, refname: String, accession: String, releaseName: String) = { implicit session: Session =>
-      val newAccession = new EGAAccession(None, resourceType, accession, refname, releaseName, new java.sql.Timestamp(System.currentTimeMillis()))
-      egaAccessions.insert(newAccession)
-   }
+  def createAccession(resourceType: String, refname: String, accession: String, releaseName: String) = { implicit session: Session =>
+    val newAccession = new EGAAccession(None, resourceType, accession, refname, releaseName, new java.sql.Timestamp(System.currentTimeMillis()))
+    egaAccessions.insert(newAccession)
+  }
 
-   def existsWithName(name: String) = { implicit session: Session =>
-      egaAccessions.filter(a => a.refname.equals(name)).firstOption.isDefined
-   }
+  def existsWithName(name: String) = { implicit session: Session =>
+    egaAccessions.filter(a => a.refname.equals(name)).firstOption.isDefined
+  }
+
+  def sampleSubmitted(sampleName: String, releaseName: String) = { implicit session: Session =>
+    // Note special comparison operators for slick.
+    egaAccessions.filter(a => a.refname === sampleName && a.releaseName === releaseName).firstOption.isDefined
+  }
 }

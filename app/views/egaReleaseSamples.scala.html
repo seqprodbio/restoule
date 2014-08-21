@@ -1,10 +1,15 @@
 @import play.api.db.slick._
 @import models.persistance.SampleFileDAO
+@import models.persistance.EGAAccessionDAO
 @(tsvFilesInRelease: List[String], sampleFilesInTSVFile: Map[Sample, List[SampleFile]], completeness: String = "all", dbSession: play.api.db.slick.Session)(implicit session: play.api.mvc.Session)
 
 @getSampleFileContentCellClass(sampleFile: SampleFile) = {
     @if(SampleFileDAO.isSampleFileComplete(sampleFile)(dbSession)){
-        completeContentCell
+        @if(EGAAccessionDAO.sampleSubmitted(sampleFile.sample, "Small")(dbSession)) {
+         uploadedContentCell
+        } else {
+         completeContentCell
+        }
     } else {
         incompleteContentCell
     }
@@ -77,6 +82,12 @@
                 background-color:#ff6e6e;
             }
             
+            .uploadedContentCell{
+                border-left:solid 2px;
+                border-right:solid 2px;
+                background-color:#b6fac1;
+            }
+                        
             .bottomCell{
                 border-top:solid 2px;
             }
