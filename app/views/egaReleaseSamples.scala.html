@@ -4,8 +4,8 @@
 @(tsvFilesInRelease: List[String], sampleFilesInTSVFile: Map[Sample, List[SampleFile]], completeness: String = "all", dbSession: play.api.db.slick.Session)(implicit session: play.api.mvc.Session)
 
 @getSampleFileContentCellClass(sampleFile: SampleFile) = {
-    @if(SampleFileDAO.isSampleFileComplete(sampleFile)(dbSession)){
-        @if(EGAAccessionDAO.sampleSubmitted(sampleFile.sample, "Small")(dbSession)) {
+    @if(SampleFileDAO.isSampleFileComplete(sampleFile)(dbSession)){  
+        @if(EGAAccessionDAO.sampleSubmitted(sampleFile.sample, session.get("releaseName").get)(dbSession)) {
          uploadedContentCell
         } else {
          completeContentCell
@@ -85,7 +85,7 @@
             .uploadedContentCell{
                 border-left:solid 2px;
                 border-right:solid 2px;
-                background-color:#b6fac1;
+                background-color:#eb2dd4;
             }
                         
             .bottomCell{
