@@ -18,11 +18,11 @@ create table "tsv_file_sample_link" ("id" SERIAL NOT NULL PRIMARY KEY,"tsv_file_
 create table "users" ("id" SERIAL NOT NULL PRIMARY KEY,"username" VARCHAR(254) NOT NULL,"created_tstmp" TIMESTAMP NOT NULL);
 alter table "pref_header" add constraint "USER_FK" foreign key("user_id") references "users"("id") on update NO ACTION on delete NO ACTION;
 alter table "release" add constraint "user_FK" foreign key("user_id") references "users"("id") on update NO ACTION on delete NO ACTION;
-alter table "release_tsv_file_link" add constraint "TSV_FILE_FK" foreign key("tsv_file_id") references "tsv_file"("id") on update NO ACTION on delete NO ACTION;
 alter table "release_tsv_file_link" add constraint "RELEASE_FK" foreign key("release_id") references "release"("id") on update NO ACTION on delete NO ACTION;
+alter table "release_tsv_file_link" add constraint "TSV_FILE_FK" foreign key("tsv_file_id") references "tsv_file"("id") on update NO ACTION on delete NO ACTION;
 alter table "sample_file" add constraint "sample_lims_info_FK" foreign key("sample_lims_info_id") references "sample_lims_info"("id") on update NO ACTION on delete NO ACTION;
-alter table "sample_sample_file_link" add constraint "SAMPLE_FILE_FK" foreign key("sample_file_id") references "sample_file"("id") on update NO ACTION on delete NO ACTION;
 alter table "sample_sample_file_link" add constraint "SAMPLE_FK" foreign key("sample_id") references "sample"("id") on update NO ACTION on delete NO ACTION;
+alter table "sample_sample_file_link" add constraint "SAMPLE_FILE_FK" foreign key("sample_file_id") references "sample_file"("id") on update NO ACTION on delete NO ACTION;
 alter table "tsv_file_sample_link" add constraint "TSV_FILE_FK" foreign key("tsv_file_id") references "tsv_file"("id") on update NO ACTION on delete NO ACTION;
 alter table "tsv_file_sample_link" add constraint "SAMPLE_FK" foreign key("sample_id") references "sample"("id") on update NO ACTION on delete NO ACTION;
 
@@ -30,11 +30,11 @@ alter table "tsv_file_sample_link" add constraint "SAMPLE_FK" foreign key("sampl
 
 alter table "pref_header" drop constraint "USER_FK";
 alter table "release" drop constraint "user_FK";
-alter table "release_tsv_file_link" drop constraint "TSV_FILE_FK";
 alter table "release_tsv_file_link" drop constraint "RELEASE_FK";
+alter table "release_tsv_file_link" drop constraint "TSV_FILE_FK";
 alter table "sample_file" drop constraint "sample_lims_info_FK";
-alter table "sample_sample_file_link" drop constraint "SAMPLE_FILE_FK";
 alter table "sample_sample_file_link" drop constraint "SAMPLE_FK";
+alter table "sample_sample_file_link" drop constraint "SAMPLE_FILE_FK";
 alter table "tsv_file_sample_link" drop constraint "TSV_FILE_FK";
 alter table "tsv_file_sample_link" drop constraint "SAMPLE_FK";
 drop table "ega_accession";
