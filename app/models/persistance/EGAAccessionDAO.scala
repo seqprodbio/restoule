@@ -48,6 +48,8 @@ object EGAAccessionDAO {
 
   def sampleSubmitted(sampleName: String, releaseName: String) = { implicit session: Session =>
     // Note special comparison operators for slick.
-    egaAccessions.filter(a => a.refname === sampleName && a.releaseName === releaseName).firstOption.isDefined
+    // Yeah... release doesn't matter here. If it's been uploaded, then it's been uploaded.
+    //egaAccessions.filter(a => a.refname === sampleName && a.releaseName === releaseName && a.resourceType === "sample").firstOption.isDefined
+    egaAccessions.filter(a => a.refname === sampleName && a.resourceType === "sample").firstOption.isDefined
   }
 }
