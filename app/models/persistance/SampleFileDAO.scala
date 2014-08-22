@@ -354,13 +354,33 @@ object SampleFileDAO {
          ""
       }
    }
+   
+   /**
+    * To submit the gpg md5 file must be on the server.
+    */
+   def getGPGMD5FtpPath(sampleFileId: Int) = { implicit session: Session =>
+      if (isDataFile(getSampleFileFromId(sampleFileId)(session).fileName)) {
+         val fullFileName = getSampleFileFromId(sampleFileId)(session).fileName
+         val strippedName = fullFileName.substring(0, fullFileName.length - 4)
+         val gpgMD5Name = strippedName + ".gpg.md5"
+         // As long as it's not 'local' then it must be ftp. We want ftp. 
+         val gpgMD5SampleFile = sampleFiles.filter(s => s.fileName === gpgMD5Name && s.origin === "ftp-private.ebi.ac.uk").firstOption
+         if (gpgMD5SampleFile.isDefined) {
+            gpgMD5SampleFile.get.path
+         } else {
+            ""
+         }
+      } else {
+         ""
+      }
+   }
 
    def getGPGMD5Path(sampleFileId: Int) = { implicit session: Session =>
       if (isDataFile(getSampleFileFromId(sampleFileId)(session).fileName)) {
          val fullFileName = getSampleFileFromId(sampleFileId)(session).fileName
          val strippedName = fullFileName.substring(0, fullFileName.length - 4)
          val gpgMD5Name = strippedName + ".gpg.md5"
-         val gpgMD5SampleFile = sampleFiles.filter(s => s.fileName === gpgMD5Name).firstOption
+         val gpgMD5SampleFile = sampleFiles.filter(s => s.fileName === gpgMD5Name && s.origin === "ftp-private.ebi.ac.uk").firstOption
          if (gpgMD5SampleFile.isDefined) {
             gpgMD5SampleFile.get.path
          } else {
@@ -381,8 +401,9 @@ object SampleFileDAO {
           sampleFile.sampleLimsInfoId.isDefined && 
           (libraryEnd.equals("WG") || libraryEnd.equals("EX") || SampleLIMSInfoDAO.isComplete(sampleFile.sampleLimsInfoId.get)(session)) && doesNameMatchRegex(sampleFile.fileName) &&
           getNominalLengthFromLibraryName(sampleFile.library) != 0 &&
+          !sampleFile.origin.equals("local") &&
           !getMD5Path(sampleFile.id.get)(session).equals("") &&
-          !getGPGMD5Path(sampleFile.id.get)(session).equals("") &&
+          !getGPGMD5FtpPath(sampleFile.id.get)(session).equals("") &&
           !getSequencerRunDateString(sampleFile.id.get)(session).equals("")) {
          true
       } else {
