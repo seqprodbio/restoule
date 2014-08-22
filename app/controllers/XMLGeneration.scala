@@ -106,13 +106,10 @@ object XMLGeneration extends Controller {
       samplesFromTSVFiles = getSampleNamesFromAllFiles(TSVFileDAO.getTSVFileNamesFromReleaseName(releaseName)(session), releaseName)(session)
     }
     samplesFromTSVFiles = removeUploadedSamples(samplesFromTSVFiles, releaseName)(session)
-    println("fo")
     samplesFromTSVFiles
   }
 
   def removeUploadedSamples(samplesToFiles: Map[String, List[String]], releaseName: String) = { implicit session: play.api.db.slick.Session =>
-    //     EGAAccessionDAO.sampleSubmitted("boo","oo")(session)
-    //: Map[String, List[String]]
     samplesToFiles.keys.foreach { s =>
       if (EGAAccessionDAO.sampleSubmitted(s, releaseName)(session)) {
         samplesToFiles -= s
