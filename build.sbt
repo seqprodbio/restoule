@@ -16,5 +16,6 @@ libraryDependencies ++= Seq(
   "org.scalatest" % "scalatest_2.10" % "2.0" % "test",
   "org.json" % "json" % "20140107",
   "org.apache.httpcomponents" % "httpclient" % "4.3.5",
-  "org.apache.httpcomponents" % "httpmime" % "4.3.1"
+  "org.apache.httpcomponents" % "httpmime" % "4.3.1",
+  "io.spray" %%  "spray-json" % "1.2.6"
 )
