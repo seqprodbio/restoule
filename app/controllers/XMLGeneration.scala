@@ -62,15 +62,19 @@ object XMLGeneration extends Controller {
     }
   }
 
+  /**
+   * This method is called to generate the actual XML files. Interestingly, it takes
+   * no arguments.
+   */
   def generateXMLs() = DBAction { implicit rs =>
     var releaseName = rs.request.session.get("releaseName").get
     var releaseId = ReleaseDAO.getReleaseIdFromName(releaseName)(rs.dbSession)
     var fileId = 0
     var fileName = ""
-    var validSampleNames = ArrayBuffer[String]()
     var directoryPath = Paths.get("./public/GeneratedXMLs/" + releaseName)
     var validSampleBuffer = ListBuffer[Sample]()
     var validSampleFiles = ArrayBuffer[SampleFile]()
+    // Get a map of samples to an array of file types.
     var validSampleNamesAndFileTypes = getValidSampleNamesAndTypes(fileId, fileName, releaseId, releaseName)(rs.dbSession)
 
     if (rs.request.session.get("viewFilesSamples").isDefined && !rs.request.session.get("viewFilesSamples").get.equals("all")) {
@@ -78,7 +82,7 @@ object XMLGeneration extends Controller {
       fileId = TSVFileDAO.getTSVIdFromFileNameAndReleaseName(fileName, releaseName)(rs.dbSession).get
     }
 
-    validSampleNames ++= getValidSampleNamesAndTypes(fileId, fileName, releaseId, releaseName)(rs.dbSession).keys
+    val validSampleNames = validSampleNamesAndFileTypes.keys
     for (name <- validSampleNames) {
       validSampleBuffer += SampleDAO.getSampleFromSampleName(name)(rs.dbSession)
     }
@@ -105,17 +109,7 @@ object XMLGeneration extends Controller {
     } else {
       samplesFromTSVFiles = getSampleNamesFromAllFiles(TSVFileDAO.getTSVFileNamesFromReleaseName(releaseName)(session), releaseName)(session)
     }
-    samplesFromTSVFiles = removeUploadedSamples(samplesFromTSVFiles, releaseName)(session)
     samplesFromTSVFiles
-  }
-
-  def removeUploadedSamples(samplesToFiles: Map[String, List[String]], releaseName: String) = { implicit session: play.api.db.slick.Session =>
-    samplesToFiles.keys.foreach { s =>
-      if (EGAAccessionDAO.sampleSubmitted(s, releaseName)(session)) {
-        samplesToFiles -= s
-      }
-    }
-    samplesToFiles
   }
 
   def getSampleNamesFromAllFiles(filenames: List[String], releaseName: String) = { implicit session: play.api.db.slick.Session =>
@@ -157,7 +151,19 @@ object XMLGeneration extends Controller {
         }
       }
     }
+    validSampleFiles = removeUploadedSampleFiles(validSampleFiles)(session)
+
     validSampleFiles
+  }
+
+  def removeUploadedSampleFiles(sampleFiles: ArrayBuffer[SampleFile]) = { implicit session: play.api.db.slick.Session =>
+    var result = new ArrayBuffer[SampleFile]()
+    sampleFiles.foreach { sampleFile =>
+      if (!EGAAccessionDAO.sampleSubmitted(sampleFile)(session)) {
+    	  result += sampleFile
+      }
+    }
+    result
   }
 
   def getSampleNamesFromFile(fileName: String, releaseName: String) = { implicit session: play.api.db.slick.Session =>
@@ -226,6 +232,10 @@ object XMLGeneration extends Controller {
       var librarySource = limsInfo.librarySource
       var librarySelection = limsInfo.librarySelection
       var nominalLength = SampleFileDAO.getNominalLengthFromLibraryName(libraryName)
+      
+      
+      // This is required. But. It's not clear why some strategy, source and selection would have an empty string. Seems wrong.
+      
       if (SampleFileDAO.getLibraryEndingFromId(sampleFile.id.get)(session).equals("WG")) {
         if (libraryStrategy.equals("")) {
           libraryStrategy = "WGS"
@@ -247,6 +257,7 @@ object XMLGeneration extends Controller {
           librarySelection = "Hybrid Selection"
         }
       }
+      
       var libraryExists = false
       for (experimentData <- experimentXMLData) {
         if (experimentData.libraryName.equals(libraryName)) {
@@ -327,6 +338,13 @@ object XMLGeneration extends Controller {
       }
     }
     runXMLData.toList
+  }
+
+  /**
+   * Generates a run alias (the unique name used by the EGA run XML fragment) from a sample file.
+   */
+  def runAlias(sampleFile: SampleFile): String = {
+    sampleFile.library + "_" + sampleFile.sequencerRunName + "_" + sampleFile.lane + sampleFile.barcode
   }
 
   def createXMLDirectory(path: Path) = {

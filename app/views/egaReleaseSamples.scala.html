@@ -4,7 +4,7 @@
 @(tsvFilesInRelease: List[String], sampleFilesInTSVFile: Map[Sample, List[SampleFile]], completeness: String = "all", dbSession: play.api.db.slick.Session)(implicit session: play.api.mvc.Session)
 
 @getSampleFileContentCellClass(sampleFile: SampleFile) = {
-    @if(EGAAccessionDAO.sampleSubmitted(sampleFile.sample, session.get("releaseName").get)(dbSession)) {
+    @if(EGAAccessionDAO.sampleSubmitted(sampleFile)(dbSession)) {
          uploadedContentCell
     } else { 
         @if(SampleFileDAO.isSampleFileComplete(sampleFile)(dbSession)) {

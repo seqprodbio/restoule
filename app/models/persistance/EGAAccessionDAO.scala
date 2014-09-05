@@ -2,8 +2,9 @@ package models.persistance
 
 import models.EGAAccession
 import models.EGAAccessionTable
-
 import play.api.db.slick.Config.driver.simple._
+import models.SampleFile
+import controllers.XMLGeneration
 
 object EGAAccessionDAO {
 
@@ -43,13 +44,10 @@ object EGAAccessionDAO {
   }
 
   def existsWithName(name: String) = { implicit session: Session =>
-    egaAccessions.filter(a => a.refname.equals(name)).firstOption.isDefined
+    egaAccessions.filter(a => a.refname === name).firstOption.isDefined
   }
 
-  def sampleSubmitted(sampleName: String, releaseName: String) = { implicit session: Session =>
-    // Note special comparison operators for slick.
-    // Yeah... release doesn't matter here. If it's been uploaded, then it's been uploaded.
-    //egaAccessions.filter(a => a.refname === sampleName && a.releaseName === releaseName && a.resourceType === "sample").firstOption.isDefined
-    egaAccessions.filter(a => a.refname === sampleName && a.resourceType === "sample").firstOption.isDefined
+  def sampleSubmitted(sampleName: SampleFile) = { implicit session: Session =>
+    egaAccessions.filter(a => a.refname === XMLGeneration.runAlias(sampleName) && a.resourceType === "run").firstOption.isDefined
   }
 }
