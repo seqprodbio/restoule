@@ -4,6 +4,8 @@ version := "1.0-SNAPSHOT"
 
 lazy val root = (project in file(".")).enablePlugins(PlayScala)
 
+resolvers += "OICR Repo" at "http://seqwaremaven.oicr.on.ca/artifactory/seqware-dependencies"
+
 libraryDependencies ++= Seq(
   jdbc,
   anorm,
@@ -17,5 +19,6 @@ libraryDependencies ++= Seq(
   "org.json" % "json" % "20140107",
   "org.apache.httpcomponents" % "httpclient" % "4.3.5",
   "org.apache.httpcomponents" % "httpmime" % "4.3.1",
-  "io.spray" %%  "spray-json" % "1.2.6"
+  "io.spray" %%  "spray-json" % "1.2.6",
+  "htsjdk" % "htsjdk" % "1.120"
 )
