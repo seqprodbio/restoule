@@ -20,6 +20,7 @@ object BamHeader {
     readgroups.foreach { f =>
       samplename = f.getSample() // The last value of sample will be returned.
     }
+    reader.close()
     samplename
   }
 
